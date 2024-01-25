@@ -1,6 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:uber_clone_user_app/authentification/signup_screen.dart';
 
+import '../methods/common_methods.dart';
+import '../widgets/loading_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -12,6 +16,61 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   TextEditingController emailTextEditingController = TextEditingController();
   TextEditingController passwordTextEditingController = TextEditingController();
+  CommonMethods cMethods = CommonMethods();
+
+  checkIfNetworkIsAvailable() async {
+    await cMethods.checkConnectivity(context);
+    signInFormValidation();
+  }
+
+  signInFormValidation() {
+    if (!emailTextEditingController.text.contains('@')) {
+      cMethods.displaySnackBar('please write valid email', context);
+    } else if (passwordTextEditingController.text.trim().length < 5) {
+      cMethods.displaySnackBar(
+          'your password must be atleast 8 or more characters', context);
+    } else {
+      //register user
+      signInUser();
+    }
+  }
+
+  signInUser() async {
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) =>
+          LoadingDialog(messageText: 'Allowing  you to Login...'),
+    );
+
+    final User? userFirebase = (await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+      email: emailTextEditingController.text.trim(),
+      password: passwordTextEditingController.text.trim(),
+    )
+            .catchError((errorMsg) {
+      Navigator.pop(context);
+      cMethods.displaySnackBar(errorMsg.toString(), context);
+    }))
+        .user;
+
+    if (!context.mounted) return;
+    Navigator.pop(context);
+
+    if (userFirebase != null) {
+      DatabaseReference usersRef = FirebaseDatabase.instance
+          .ref()
+          .child('users')
+          .child(userFirebase.uid);
+      usersRef.once().then((snap) {
+        if (snap.snapshot.value != null) {
+        } else {
+          //here
+          cMethods.displaySnackBar('your record do not exists', context);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 80, vertical: 10)),
                       child: const Text('Login'),
-                      onPressed: () {},
+                      onPressed: () {
+                        checkIfNetworkIsAvailable();
+                      },
                     )
                   ],
                 ),
@@ -92,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 onPressed: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (c)=>SignUpScreen()));
+                      MaterialPageRoute(builder: (c) => SignUpScreen()));
                 },
               )
             ],

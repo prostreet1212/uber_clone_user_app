@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:uber_clone_user_app/authentification/login_screen.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
+import 'package:uber_clone_user_app/pages/home_page.dart';
 import 'package:uber_clone_user_app/widgets/loading_dialog.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -61,6 +63,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         .user;
     if (!context.mounted) return;
     Navigator.pop(context);
+    DatabaseReference usersRef=FirebaseDatabase.instance.ref()
+        .child('users').child(userFirebase!.uid);
+    Map userDataMap={
+      'name':userNameTextEditingController.text.trim(),
+      'email':emailTextEditingController.text.trim(),
+      'phone':userPhoneTextEditingController.text.trim(),
+      'id':userFirebase.uid,
+      'blockStatus':'no',
+    };
+    usersRef.set(userDataMap);
+Navigator.push(context, MaterialPageRoute(builder: (c)=>HomePage()));
   }
 
   @override
