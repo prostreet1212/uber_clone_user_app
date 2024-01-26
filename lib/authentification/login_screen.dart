@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:uber_clone_user_app/authentification/signup_screen.dart';
+import 'package:uber_clone_user_app/global/global_var.dart';
+import 'package:uber_clone_user_app/pages/home_page.dart';
 
 import '../methods/common_methods.dart';
 import '../widgets/loading_dialog.dart';
@@ -64,12 +66,32 @@ class _LoginScreenState extends State<LoginScreen> {
           .child(userFirebase.uid);
       usersRef.once().then((snap) {
         if (snap.snapshot.value != null) {
+          if ((snap.snapshot.value as Map)['blockStatus'] == 'no') {
+            userName=(snap.snapshot.value as Map)['name'];
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (c) => HomePage()),
+            );
+          } else {
+            FirebaseAuth.instance.signOut();
+            cMethods.displaySnackBar(
+                'your are blocked. Contact admin: prostreet1212@gmail.com',
+                context);
+          }
         } else {
-          //here
-          cMethods.displaySnackBar('your record do not exists', context);
+          FirebaseAuth.instance.signOut();
+          cMethods.displaySnackBar(
+              'your record do not exists as a User', context);
         }
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    emailTextEditingController.text='admin@kdrc.ru';
+    passwordTextEditingController.text='12345678';
   }
 
   @override
