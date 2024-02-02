@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uber_clone_user_app/authentification/login_screen.dart';
+import 'package:uber_clone_user_app/pages/home_page.dart';
 
 import 'firebase_options.dart';
 
@@ -27,7 +29,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
           scaffoldBackgroundColor: Colors.black,
           buttonTheme: ButtonThemeData()),
-      home: LoginScreen(),
+      home:FirebaseAuth.instance.currentUser==null? LoginScreen()
+      :HomePage(),
     );
   }
 }

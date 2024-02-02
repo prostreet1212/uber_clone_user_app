@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           .ref()
           .child('users')
           .child(userFirebase.uid);
-      usersRef.once().then((snap) {
+      await usersRef.once().then((snap) {
         if (snap.snapshot.value != null) {
           if ((snap.snapshot.value as Map)['blockStatus'] == 'no') {
             userName=(snap.snapshot.value as Map)['name'];
@@ -86,6 +86,8 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+
+
 
   @override
   void initState() {
