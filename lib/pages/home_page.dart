@@ -27,6 +27,8 @@ class _HomePageState extends State<HomePage> {
   Position? currentPositionOfUser;
   GlobalKey<ScaffoldState> sKey=GlobalKey<ScaffoldState>();
   CommonMethods cMethods=CommonMethods();
+  double searchContainerHeight=276;
+  double bottomMapPadding=0;
 
   void updateMapTheme(GoogleMapController controller) {
     getJsonFileFromThemes('themes/night_style.json')
@@ -176,9 +178,9 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          //google map
+          ///google map
           GoogleMap(
-            padding: EdgeInsets.only(top: 26),
+            padding: EdgeInsets.only(top: 26,bottom: bottomMapPadding),
             mapType: MapType.normal,
             myLocationEnabled: true,
             initialCameraPosition: googlePlexInitialPosition,
@@ -187,6 +189,9 @@ class _HomePageState extends State<HomePage> {
               updateMapTheme(controllerGoogleMap!);
               googleMapCompleterController.complete(controllerGoogleMap);
               getCurrentLiveLocationOfUser();
+              setState(() {
+                bottomMapPadding=300;
+              });
             },
           ),
           //drawer button
@@ -218,6 +223,49 @@ class _HomePageState extends State<HomePage> {
                   sKey.currentState!.openDrawer();
                 },
               ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: -80,
+            child: Container(
+              height: searchContainerHeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      shape: CircleBorder(),
+                      padding:EdgeInsets.all(24),
+                    ),
+                    child: Icon(Icons.search,color: Colors.white,
+                    size: 25,),
+                    onPressed: (){}, ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      shape: CircleBorder(),
+                      padding:EdgeInsets.all(24),
+                    ),
+                    child: Icon(Icons.home,
+                      color: Colors.white,
+                      size: 25,),
+                    onPressed: (){}, ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      shape: CircleBorder(),
+                      padding:EdgeInsets.all(24),
+                    ),
+                    child: Icon(Icons.work,color: Colors.white,
+                      size: 25,),
+                    onPressed: (){}, ),
+
+                ],
+              ),
+
+            ),
           )
         ],
       ),
