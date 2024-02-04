@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:uber_clone_user_app/appinfo/app_info.dart';
 import 'package:uber_clone_user_app/authentification/login_screen.dart';
 import 'package:uber_clone_user_app/pages/home_page.dart';
 
@@ -23,14 +25,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: Colors.black,
-          buttonTheme: ButtonThemeData()),
-      home:FirebaseAuth.instance.currentUser==null? LoginScreen()
-      :HomePage(),
+    return ChangeNotifierProvider(
+      create: (context)=>AppInfo(),
+      child: MaterialApp(
+        title: 'Flutter User App',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.dark().copyWith(
+            scaffoldBackgroundColor: Colors.black,
+            buttonTheme: ButtonThemeData()),
+        home:FirebaseAuth.instance.currentUser==null? LoginScreen()
+        :HomePage(),
+      ),
     );
   }
 }

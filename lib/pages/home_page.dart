@@ -10,6 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uber_clone_user_app/global/global_var.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
+import 'package:uber_clone_user_app/pages/search_destination_page.dart';
 
 import '../authentification/login_screen.dart';
 
@@ -56,7 +57,8 @@ class _HomePageState extends State<HomePage> {
         CameraPosition(target: positionOfUserInLatLng, zoom: 15);
     controllerGoogleMap!
         .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
-  await getUserAndCheckBlockStatus();
+    await CommonMethods.convertGeoGraphicCoordinatesIntoHumanReadableAddress(currentPositionOfUser!, context);
+    await getUserAndCheckBlockStatus();
   }
 
   getUserAndCheckBlockStatus()async{
@@ -241,7 +243,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: Icon(Icons.search,color: Colors.white,
                     size: 25,),
-                    onPressed: (){}, ),
+                    onPressed: (){
+                      Navigator.push(context, MaterialPageRoute(builder: (c)=>SearchDestinationPage()));
+                    }, ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey,

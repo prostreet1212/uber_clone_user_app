@@ -39,6 +39,8 @@ dependencies:
   google_maps_flutter: ^2.5.3
   permission_handler:
   geolocator:
+  yandex_geocoder: 2.1.0
+  provider:
 
 
 dev_dependencies:

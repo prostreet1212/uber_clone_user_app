@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../appinfo/app_info.dart';
 
 class SearchDestinationPage extends StatefulWidget {
   const SearchDestinationPage({Key? key}) : super(key: key);
@@ -8,10 +11,16 @@ class SearchDestinationPage extends StatefulWidget {
 }
 
 class _SearchDestinationPageState extends State<SearchDestinationPage> {
+  TextEditingController pickUpTextEditingController = TextEditingController();
+  TextEditingController destinationTextEditingController =
+      TextEditingController();
 
-TextEditingController pickUpTextEditingController=TextEditingController();
   @override
   Widget build(BuildContext context) {
+
+    String userAddress=Provider.of<AppInfo>(context,listen: false).pickUpLocation!.humanReadableAddress??'';
+    pickUpTextEditingController.text=userAddress;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -19,7 +28,7 @@ TextEditingController pickUpTextEditingController=TextEditingController();
             Card(
               elevation: 10,
               child: Container(
-                height: 212,
+                height: 230,
                 decoration: BoxDecoration(color: Colors.black12, boxShadow: [
                   BoxShadow(
                       color: Colors.black12,
@@ -38,32 +47,80 @@ TextEditingController pickUpTextEditingController=TextEditingController();
                       //icon button-title
                       Stack(
                         children: [
-                          IconButton(
-                            icon: Icon(
+                          GestureDetector(
+                            child: Icon(
                               Icons.arrow_back,
                               color: Colors.white,
                             ),
-                            onPressed: () {},
+                            onTap: () {
+                              Navigator.pop(context);
+                            },
                           ),
                           Center(
-                            child: Text('Set Dropoff Location',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),),
+                            child: Text(
+                              'Set Dropoff Location',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      
-                      SizedBox(height: 18,),
+
+                      SizedBox(
+                        height: 18,
+                      ),
+                      //pickup text field
                       Row(
                         children: [
-                          Image.asset('assets/images/initial.png',
-                          height: 16,
-                              width: 16,),
-                          SizedBox(height: 18,),
+                          Image.asset(
+                            'assets/images/initial.png',
+                            height: 16,
+                            width: 16,
+                          ),
+                          SizedBox(
+                            width: 18,
+                          ),
                           Expanded(
-                              child:Container(
+                              child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(3),
+                              child: TextField(
+                                controller: pickUpTextEditingController,
+                                decoration: InputDecoration(
+                                  hintText: 'Pickup Address',
+                                  fillColor: Colors.white12,
+                                  filled: true,
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.only(left: 11,top: 9,bottom: 9)
+                                ),
+                              ),
+                            ),
+                          ))
+                        ],
+                      ),
+                      SizedBox(
+                        height: 11,
+                      ),
+                      //destination text field
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/final.png',
+                            height: 16,
+                            width: 16,
+                          ),
+                          SizedBox(
+                            width: 18,
+                          ),
+                          Expanded(
+                              child: Container(
                                 decoration: BoxDecoration(
                                   color: Colors.grey,
                                   borderRadius: BorderRadius.circular(5),
@@ -71,13 +128,22 @@ TextEditingController pickUpTextEditingController=TextEditingController();
                                 child: Padding(
                                   padding: EdgeInsets.all(3),
                                   child: TextField(
-
+                                    controller: destinationTextEditingController,
+                                    decoration: InputDecoration(
+                                        hintText: 'Destination Address',
+                                        fillColor: Colors.white12,
+                                        filled: true,
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.only(left: 11,top: 9,bottom: 9)
+                                    ),
                                   ),
                                 ),
-                              ) )
-
+                              ),
+                          ),
                         ],
-                      )
+                      ),
+
                     ],
                   ),
                 ),
