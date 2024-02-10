@@ -28,7 +28,7 @@ class CommonMethods {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  /*static sendRequestToAPI(String apiUrl)async{
+  static sendRequestToAPI(String apiUrl)async{
     http.Response responseFromAPI=await http.get(Uri.parse(apiUrl));
     try{
       if(responseFromAPI.statusCode==200){
@@ -41,7 +41,7 @@ class CommonMethods {
     }catch(errorMsg){
 return 'error';
     }
-  }*/
+  }
 
   //reverse geocoding
   static Future<String> convertGeoGraphicCoordinatesIntoHumanReadableAddress(

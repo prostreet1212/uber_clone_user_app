@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uber_clone_user_app/global/global_var.dart';
+import 'package:uber_clone_user_app/methods/common_methods.dart';
+import 'package:uber_clone_user_app/models/prediction_model.dart';
 
 import '../appinfo/app_info.dart';
 
@@ -14,6 +17,33 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
   TextEditingController pickUpTextEditingController = TextEditingController();
   TextEditingController destinationTextEditingController =
       TextEditingController();
+  List<PredictionModel> dropOffPredicationsPlacesList=[];
+
+  searchLocation(String locationName)async{
+    if(locationName.length>1){
+      String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
+      var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
+      if(responseFromPlacesAPI=='error'){
+        return;
+      }
+      var predictionResultInJson=responseFromPlacesAPI['predictions'];
+      print(responseFromPlacesAPI.toString());
+
+      /*String apiPlaceUrl='https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$locationName&key=$googleMapKey&components=country:ae';
+      var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
+      if(responseFromPlacesAPI=='error'){
+        return;
+      }
+      if(responseFromPlacesAPI['status']=='OK'){
+        var predictionResultInJson=responseFromPlacesAPI['predictions'];
+        var predictionsList=(predictionResultInJson as List).map((eachPlacePrediction) => PredictionModel
+            .fromJson(eachPlacePrediction)).toList();
+        setState(() {
+          dropOffPredicationsPlacesList=predictionsList;
+        });
+      }*/
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +159,9 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
                                   padding: EdgeInsets.all(3),
                                   child: TextField(
                                     controller: destinationTextEditingController,
+                                    onChanged: (inputText){
+                                      searchLocation(inputText);
+                                    },
                                     decoration: InputDecoration(
                                         hintText: 'Destination Address',
                                         fillColor: Colors.white12,
