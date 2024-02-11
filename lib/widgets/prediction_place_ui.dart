@@ -14,7 +14,7 @@ class _PredictionPlaceUIState extends State<PredictionPlaceUI> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      child: Container(
+      child: SizedBox(
         child: Column(
           children: [
             SizedBox(height: 10,),

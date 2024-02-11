@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:uber_clone_user_app/global/global_var.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
 import 'package:uber_clone_user_app/models/prediction_model.dart';
+import 'package:uber_clone_user_app/models/yandex_address.dart';
+import 'package:uber_clone_user_app/widgets/prediction_place_ui.dart';
 
 import '../appinfo/app_info.dart';
 
@@ -19,9 +21,10 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
       TextEditingController();
   List<PredictionModel> dropOffPredicationsPlacesList = [];
 
+  //test
   searchLocation(String locationName) async {
     if (locationName.length > 1) {
-      List<PredictionModel> predictionsList = [
+     /* List<PredictionModel> predictionsList = [
         PredictionModel(
             place_id: '1', main_text: 'kotlas', secondary_text: 'russia'),
         PredictionModel(
@@ -31,15 +34,19 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
       ];
       setState(() {
         dropOffPredicationsPlacesList = predictionsList;
-      });
+      });*/
       //yandex
-      /*String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
+      String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
       var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
-      if(responseFromPlacesAPI=='error'){
-        return;
-      }
-      var predictionResultInJson=responseFromPlacesAPI['predictions'];
-      print(responseFromPlacesAPI.toString());*/
+      var predictionResultInJson=responseFromPlacesAPI['features'];
+      var predictionsList=(predictionResultInJson as List).map((e) {
+        return PredictionModel(place_id: '1',main_text: e['properties']['name'],secondary_text: e['properties']['description']);
+        //e['properties'];
+        print(e['properties']['name']);
+      }).toList();
+      setState(() {
+        dropOffPredicationsPlacesList=predictionsList;
+      });
 
       //google
       /*String apiPlaceUrl='https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$locationName&key=$googleMapKey&components=country:ae';
@@ -201,10 +208,21 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
                 ? Padding(
                     padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     child: ListView.separated(
-                      itemCount: ,
-                        itemBuilder: (context, i) {
-                        return
-                        }),
+                      padding: EdgeInsets.all(0),
+                      itemCount: dropOffPredicationsPlacesList.length,
+                        shrinkWrap: true,
+                        physics: ClampingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                        return Card(
+                          elevation: 3,
+                          child: PredictionPlaceUI(
+                            predictionPlaceData: dropOffPredicationsPlacesList[index],
+                          ),
+                        );
+                        },
+                      separatorBuilder: (context,  index) {
+                        return SizedBox(height: 2,);
+                      },),
                   )
                 : Container(),
           ],
