@@ -17,18 +17,31 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
   TextEditingController pickUpTextEditingController = TextEditingController();
   TextEditingController destinationTextEditingController =
       TextEditingController();
-  List<PredictionModel> dropOffPredicationsPlacesList=[];
+  List<PredictionModel> dropOffPredicationsPlacesList = [];
 
-  searchLocation(String locationName)async{
-    if(locationName.length>1){
-      String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
+  searchLocation(String locationName) async {
+    if (locationName.length > 1) {
+      List<PredictionModel> predictionsList = [
+        PredictionModel(
+            place_id: '1', main_text: 'kotlas', secondary_text: 'russia'),
+        PredictionModel(
+            place_id: '2', main_text: 'krasnoborsk', secondary_text: 'russia'),
+        PredictionModel(
+            place_id: '3', main_text: 'koryazhma', secondary_text: 'russia'),
+      ];
+      setState(() {
+        dropOffPredicationsPlacesList = predictionsList;
+      });
+      //yandex
+      /*String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
       var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
       if(responseFromPlacesAPI=='error'){
         return;
       }
       var predictionResultInJson=responseFromPlacesAPI['predictions'];
-      print(responseFromPlacesAPI.toString());
+      print(responseFromPlacesAPI.toString());*/
 
+      //google
       /*String apiPlaceUrl='https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$locationName&key=$googleMapKey&components=country:ae';
       var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
       if(responseFromPlacesAPI=='error'){
@@ -47,9 +60,11 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
 
   @override
   Widget build(BuildContext context) {
-
-    String userAddress=Provider.of<AppInfo>(context,listen: false).pickUpLocation!.humanReadableAddress??'';
-    pickUpTextEditingController.text=userAddress;
+    String userAddress = Provider.of<AppInfo>(context, listen: false)
+            .pickUpLocation!
+            .humanReadableAddress ??
+        '';
+    pickUpTextEditingController.text = userAddress;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -123,13 +138,13 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
                               child: TextField(
                                 controller: pickUpTextEditingController,
                                 decoration: InputDecoration(
-                                  hintText: 'Pickup Address',
-                                  fillColor: Colors.white12,
-                                  filled: true,
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.only(left: 11,top: 9,bottom: 9)
-                                ),
+                                    hintText: 'Pickup Address',
+                                    fillColor: Colors.white12,
+                                    filled: true,
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.only(
+                                        left: 11, top: 9, bottom: 9)),
                               ),
                             ),
                           ))
@@ -150,38 +165,48 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
                             width: 18,
                           ),
                           Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(3),
-                                  child: TextField(
-                                    controller: destinationTextEditingController,
-                                    onChanged: (inputText){
-                                      searchLocation(inputText);
-                                    },
-                                    decoration: InputDecoration(
-                                        hintText: 'Destination Address',
-                                        fillColor: Colors.white12,
-                                        filled: true,
-                                        border: InputBorder.none,
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.only(left: 11,top: 9,bottom: 9)
-                                    ),
-                                  ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(3),
+                                child: TextField(
+                                  controller: destinationTextEditingController,
+                                  onChanged: (inputText) {
+                                    searchLocation(inputText);
+                                  },
+                                  decoration: InputDecoration(
+                                      hintText: 'Destination Address',
+                                      fillColor: Colors.white12,
+                                      filled: true,
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.only(
+                                          left: 11, top: 9, bottom: 9)),
                                 ),
                               ),
+                            ),
                           ),
                         ],
                       ),
-
                     ],
                   ),
                 ),
               ),
-            )
+            ),
+            //display prediction results
+            (dropOffPredicationsPlacesList.length > 0)
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: ListView.separated(
+                      itemCount: ,
+                        itemBuilder: (context, i) {
+                        return
+                        }),
+                  )
+                : Container(),
           ],
         ),
       ),
