@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:uber_clone_user_app/appinfo/app_info.dart';
+import 'package:uber_clone_user_app/models/address_model.dart';
 import 'package:uber_clone_user_app/models/prediction_model.dart';
+import 'package:uber_clone_user_app/widgets/loading_dialog.dart';
+import 'package:yandex_geocoder/yandex_geocoder.dart';
 
 class PredictionPlaceUI extends StatefulWidget {
   PredictionModel? predictionPlaceData;
@@ -11,6 +16,26 @@ class PredictionPlaceUI extends StatefulWidget {
 }
 
 class _PredictionPlaceUIState extends State<PredictionPlaceUI> {
+
+  fetchClickedPlaceDetails(String ws)async {
+    showDialog(
+      barrierDismissible: false,
+        context: context,
+        builder: (context)=>LoadingDialog(messageText: 'Getting details...'));
+    
+    AddressModel dropOffLocation=AddressModel();
+    dropOffLocation.placeName=widget.predictionPlaceData!.main_text;
+    dropOffLocation.latitudePosition=widget.predictionPlaceData!.latitude;
+    dropOffLocation.longitudePosition=widget.predictionPlaceData!.longitude;
+    dropOffLocation.placeID='1';
+    Provider.of<AppInfo>(context,listen: false)
+    .updateDropOffLocation(dropOffLocation);
+    Navigator.pop(context);
+    Navigator.pop(context,'placeSelected');
+
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
@@ -53,7 +78,9 @@ class _PredictionPlaceUIState extends State<PredictionPlaceUI> {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
       ),
-      onPressed: () {},
+      onPressed: () {
+        fetchClickedPlaceDetails(widget.predictionPlaceData!.place_id.toString());
+      },
     );
   }
 }

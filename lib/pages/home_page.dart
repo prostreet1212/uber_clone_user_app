@@ -8,11 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:uber_clone_user_app/global/global_var.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
 
+import '../appinfo/app_info.dart';
 import '../authentification/login_screen.dart';
+import '../widgets/loading_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -30,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   CommonMethods cMethods=CommonMethods();
   double searchContainerHeight=276;
   double bottomMapPadding=0;
+  double rideDetailsContainerHeight=0;
 
   void updateMapTheme(GoogleMapController controller) {
     getJsonFileFromThemes('themes/night_style.json')
@@ -91,8 +95,33 @@ class _HomePageState extends State<HomePage> {
 
       }
     });
-
   }
+
+  displayUserRideDetailsContainer()async{
+    //draw route between pickup and dropoff
+    await retrieveDirectionDetails();
+
+    setState(() {
+      searchContainerHeight=0;
+      bottomMapPadding=240;
+      rideDetailsContainerHeight=242;
+    });
+  }
+
+  retrieveDirectionDetails(){
+    var pickupLocation=Provider.of<AppInfo>(context,listen: false).pickUpLocation;
+    var dropOffDestinationLocation=Provider.of<AppInfo>(context,listen: false).dropOffUpLocation;
+
+    var pickupGeoGraphicCoordinates=LatLng(pickupLocation!.latitudePosition!, pickupLocation!.longitudePosition!);
+    var dropOffDestinationGeoGraphicCoordinates=LatLng(dropOffDestinationLocation!.latitudePosition!, dropOffDestinationLocation!.longitudePosition!);
+
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context)=>LoadingDialog(messageText: 'Getting direction...'));
+    //directions API
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +255,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
           ),
+          //search location icon button
           Positioned(
             left: 0,
             right: 0,
@@ -243,9 +273,16 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: Icon(Icons.search,color: Colors.white,
                     size: 25,),
-                    onPressed: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (c)=>SearchDestinationPage()));
-                    }, ),
+                    onPressed: ()async{
+                      var responseFromSearchPage=
+                      await Navigator.push(context, MaterialPageRoute(builder: (c)=>SearchDestinationPage()));
+                      if(responseFromSearchPage=='placeSelected'){
+                        /*String dropOffLocation=Provider.of<AppInfo>(context,listen: false)
+                            .dropOffUpLocation!.placeName??'';
+                        print('dropOffLocation ='+dropOffLocation);*/
+                        displayUserRideDetailsContainer();
+                      }
+                      }, ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey,
@@ -270,7 +307,83 @@ class _HomePageState extends State<HomePage> {
               ),
 
             ),
-          )
+          ),
+          // ride details container
+          Positioned(
+            left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: rideDetailsContainerHeight,
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.only(
+                      topLeft:Radius.circular(15),
+                      topRight:Radius.circular(15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white12,
+                      blurRadius: 15,
+                      spreadRadius: 0.5,
+                      offset: Offset(.7,.7),
+                    )
+                  ]
+
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 18),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                          padding: EdgeInsets.only(left: 16,right: 16),
+                      child: SizedBox(
+                        height: 190,
+                          child: Card(
+                            elevation: 10,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width*.7,
+                                color: Colors.black45,
+
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 8,bottom: 8),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('2 km',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      ),
+                                      GestureDetector(
+                                        child: Image.asset('assets/images/uberexec.png',
+                                          height: 116,
+                                            width: 116,),
+                                        onTap: (){},
+                                      ),
+                                     Text('\$ 12',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ),
+                      ),
+                      ),
+                    ],
+                  ),
+                ),
+              ))
+          
         ],
       ),
     );

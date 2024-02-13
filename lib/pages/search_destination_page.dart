@@ -40,9 +40,8 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
       var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
       var predictionResultInJson=responseFromPlacesAPI['features'];
       var predictionsList=(predictionResultInJson as List).map((e) {
-        return PredictionModel(place_id: '1',main_text: e['properties']['name'],secondary_text: e['properties']['description']);
-        //e['properties'];
-        print(e['properties']['name']);
+        return PredictionModel(place_id: '1',main_text: e['properties']['name'],secondary_text: e['properties']['description'],
+            latitude:((e['geometry']['coordinates']) as List)[0],longitude: ((e['geometry']['coordinates']) as List)[1] );
       }).toList();
       setState(() {
         dropOffPredicationsPlacesList=predictionsList;
@@ -72,6 +71,8 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
             .humanReadableAddress ??
         '';
     pickUpTextEditingController.text = userAddress;
+    destinationTextEditingController.text='kotla';
+
 
     return Scaffold(
       body: SingleChildScrollView(
