@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:provider/provider.dart';
 import 'package:uber_clone_user_app/global/global_var.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
 import 'package:uber_clone_user_app/models/prediction_model.dart';
-import 'package:uber_clone_user_app/models/yandex_address.dart';
 import 'package:uber_clone_user_app/widgets/prediction_place_ui.dart';
 
 import '../appinfo/app_info.dart';
@@ -24,19 +24,26 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
   //test
   searchLocation(String locationName) async {
     if (locationName.length > 1) {
-     /* List<PredictionModel> predictionsList = [
-        PredictionModel(
-            place_id: '1', main_text: 'kotlas', secondary_text: 'russia'),
-        PredictionModel(
-            place_id: '2', main_text: 'krasnoborsk', secondary_text: 'russia'),
-        PredictionModel(
-            place_id: '3', main_text: 'koryazhma', secondary_text: 'russia'),
-      ];
-      setState(() {
-        dropOffPredicationsPlacesList = predictionsList;
-      });*/
+
+      var data = await addressSuggestion(locationName);
+      if (data.isNotEmpty) {
+        var predictionsList=data.map((e){
+          return PredictionModel(
+            place_id: '1',
+            main_text: e.address!.name!.toString(),
+            secondary_text:e.address.toString(),
+            latitude: e.point!.latitude,
+            longitude: e.point!.longitude,
+          );
+        }).toList();
+        setState(() {
+          dropOffPredicationsPlacesList=predictionsList;
+        });
+      }
+
+
       //yandex
-      String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
+   /*   String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
       var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
       var predictionResultInJson=responseFromPlacesAPI['features'];
       var predictionsList=(predictionResultInJson as List).map((e) {
@@ -45,22 +52,8 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
       }).toList();
       setState(() {
         dropOffPredicationsPlacesList=predictionsList;
-      });
+      });*/
 
-      //google
-      /*String apiPlaceUrl='https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$locationName&key=$googleMapKey&components=country:ae';
-      var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
-      if(responseFromPlacesAPI=='error'){
-        return;
-      }
-      if(responseFromPlacesAPI['status']=='OK'){
-        var predictionResultInJson=responseFromPlacesAPI['predictions'];
-        var predictionsList=(predictionResultInJson as List).map((eachPlacePrediction) => PredictionModel
-            .fromJson(eachPlacePrediction)).toList();
-        setState(() {
-          dropOffPredicationsPlacesList=predictionsList;
-        });
-      }*/
     }
   }
 
@@ -71,7 +64,7 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
             .humanReadableAddress ??
         '';
     pickUpTextEditingController.text = userAddress;
-    destinationTextEditingController.text='kotla';
+    //destinationTextEditingController.text='kotla';
 
 
     return Scaffold(
