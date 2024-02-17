@@ -95,7 +95,22 @@ static Future<DirectionDetails> getDirectionDetailsFromAPI(LatLng source,LatLng 
     print('Расстояние: ${roadInfo.distance}, длительность ${roadInfo.duration}');
     
 
-    return DirectionDetails(distanceTextString: roadInfo.distance!.toStringAsFixed(2),durationTextString: '${roadInfo.duration!/60} мин.',distanceValueDigits: 15,durationValueDigits: 5,encodedPoints: 'points');
+    return DirectionDetails(distanceTextString: '${roadInfo.distance!.toStringAsFixed(2)} km',
+        durationTextString: '${(roadInfo.duration!/60).toStringAsFixed(0)} min.',
+        distanceValueDigits: roadInfo.distance!,
+        durationValueDigits: roadInfo.duration!,
+        encodedPoints: 'points');
 }
 
+calculateFareAmount(DirectionDetails directionDetails){
+    double distancePerKmAmount=0.4;
+    double durationPerMinuteAmount=0.3;
+    double baseFareAmount=2;
+
+    double totalDistanceTravelledFareAmount=(directionDetails.distanceValueDigits!/1000)*distancePerKmAmount;
+    double totalDurationSpendFareAmount=(directionDetails.durationValueDigits!/60)*durationPerMinuteAmount;
+
+    double overAllTotalFareAmount=baseFareAmount+totalDistanceTravelledFareAmount+totalDurationSpendFareAmount;
+    return overAllTotalFareAmount.toStringAsFixed(1);
+  }
 }

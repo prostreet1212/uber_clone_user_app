@@ -134,11 +134,11 @@ class _HomePageState extends State<HomePage> {
         dropOffDestinationLocation!.latitudePosition!,
         dropOffDestinationLocation!.longitudePosition!);
 
-   /* showDialog(
+    showDialog(
         barrierDismissible: false,
         context: context,
         builder: (context) =>
-            LoadingDialog(messageText: 'Getting direction...'));*/
+            LoadingDialog(messageText: 'Getting direction...'));
     //directions API
     var detailsFromDirectionAPI =
         await CommonMethods.getDirectionDetailsFromAPI(
@@ -510,7 +510,9 @@ class _HomePageState extends State<HomePage> {
                                       onTap: () {},
                                     ),
                                     Text(
-                                      '\$ 12',
+                                      (tripDirectionDetailsInfo!=null)
+                                          ?'${(cMethods.calculateFareAmount(tripDirectionDetailsInfo!)).toString()}\$'
+                                      :'',
                                       style: TextStyle(
                                         fontSize: 18,
                                         color: Colors.white70,

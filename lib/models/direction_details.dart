@@ -1,8 +1,8 @@
 class DirectionDetails{
   String? distanceTextString;
   String? durationTextString;
-  int? distanceValueDigits;
-  int? durationValueDigits;
+  double? distanceValueDigits;
+  double? durationValueDigits;
   String? encodedPoints;
 
   DirectionDetails({
