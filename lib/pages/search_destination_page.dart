@@ -58,6 +58,12 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    destinationTextEditingController.text='Котла';
+  }
+
+  @override
   Widget build(BuildContext context) {
     String userAddress = Provider.of<AppInfo>(context, listen: false)
             .pickUpLocation!
@@ -65,6 +71,8 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
         '';
     pickUpTextEditingController.text = userAddress;
     //destinationTextEditingController.text='kotla';
+
+
 
 
     return Scaffold(

@@ -95,7 +95,7 @@ static Future<DirectionDetails> getDirectionDetailsFromAPI(LatLng source,LatLng 
     print('Расстояние: ${roadInfo.distance}, длительность ${roadInfo.duration}');
     
 
-    return DirectionDetails(distanceTextString: roadInfo.distance!.toStringAsFixed(2),durationTextString: '${roadInfo.duration!/60} мин.',distanceValueDigits: 15,durationValueDigits: 5,encodedPoints: 'points');
+    return DirectionDetails(distanceTextString: '${roadInfo.distance!.toStringAsFixed(2)} км.',durationTextString: '${(roadInfo.duration!/60).toStringAsFixed(2)} мин.',distanceValueDigits: 15,durationValueDigits: 5,encodedPoints: 'points');
 }
 
 }
