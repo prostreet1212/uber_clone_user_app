@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
@@ -134,11 +136,11 @@ class _HomePageState extends State<HomePage> {
         dropOffDestinationLocation!.latitudePosition!,
         dropOffDestinationLocation!.longitudePosition!);
 
-   /* showDialog(
+    showDialog(
         barrierDismissible: false,
         context: context,
         builder: (context) =>
-            LoadingDialog(messageText: 'Getting direction...'));*/
+            LoadingDialog(messageText: 'Getting direction...'));
     //directions API
     var detailsFromDirectionAPI =
         await CommonMethods.getDirectionDetailsFromAPI(
@@ -148,6 +150,27 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       tripDirectionDetailsInfo = detailsFromDirectionAPI;
     });
+    await mapController.addMarker(
+        GeoPoint(
+            latitude: pickupGeoGraphicCoordinates.latitude,
+            longitude: pickupGeoGraphicCoordinates.longitude),
+        markerIcon: const MarkerIcon(
+          icon:Icon(CupertinoIcons.location_solid,size: 46,color: Colors.green,),),
+        angle: pi / 3,
+        iconAnchor: IconAnchor(
+          anchor: Anchor.center,
+        ));
+    await mapController.addMarker(
+        GeoPoint(
+            latitude: dropOffDestinationGeoGraphicCoordinates.latitude,
+            longitude: dropOffDestinationGeoGraphicCoordinates.longitude),
+        markerIcon: const MarkerIcon(
+          icon:Icon(CupertinoIcons.location_solid,size: 46,color: Colors.deepOrange,),),
+        angle: pi / 3,
+        iconAnchor: IconAnchor(
+          anchor: Anchor.center,
+        ));
+    Navigator.pop(context);
   }
 
   @override
@@ -320,13 +343,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             onLocationChanged: (GeoPoint geo) {
-              currentPositionOfUser1 = geo;
+              //currentPositionOfUser1 = geo;
               print('ИЗменить${geo.toString()}');
             },
             onMapIsReady: (isReady) async {
               if (isReady) {
                 await Future.delayed(Duration(seconds: 1), () async {
                   await mapController.currentLocation();
+                  currentPositionOfUser1=await mapController.myLocation();
                   getCurrentLiveLocationOfUser();
                 });
               }
