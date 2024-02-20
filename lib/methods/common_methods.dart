@@ -84,7 +84,7 @@ return 'error';
 
   }
 
-  //directions API
+  //directions API1
 static Future<DirectionDetails> getDirectionDetailsFromAPI(LatLng source,LatLng destination,MapController controller)async{
 
     RoadInfo roadInfo = await controller.drawRoad(
