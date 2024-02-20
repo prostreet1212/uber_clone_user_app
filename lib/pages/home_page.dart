@@ -48,6 +48,8 @@ class _HomePageState extends State<HomePage> {
       unFollowUser: true,
     ),
   );
+  bool isDrawerOpened=true;
+
 
   void updateMapTheme(GoogleMapController controller) {
     getJsonFileFromThemes('themes/night_style.json')
@@ -121,6 +123,7 @@ class _HomePageState extends State<HomePage> {
       searchContainerHeight = 0;
       bottomMapPadding = 240;
       rideDetailsContainerHeight = 242;
+      isDrawerOpened=false;
     });
   }
 
@@ -171,6 +174,12 @@ class _HomePageState extends State<HomePage> {
           anchor: Anchor.center,
         ));
     Navigator.pop(context);
+  }
+
+  resetAppNow(){
+    setState(() {
+
+    });
   }
 
   @override
@@ -282,22 +291,6 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          ///google map
-          /* GoogleMap(
-            padding: EdgeInsets.only(top: 26,bottom: bottomMapPadding),
-            mapType: MapType.normal,
-            myLocationEnabled: true,
-            initialCameraPosition: googlePlexInitialPosition,
-            onMapCreated: (GoogleMapController mapController) {
-              controllerGoogleMap = mapController;
-              updateMapTheme(controllerGoogleMap!);
-              googleMapCompleterController.complete(controllerGoogleMap);
-              getCurrentLiveLocationOfUser();
-              setState(() {
-                bottomMapPadding=300;
-              });
-            },
-          ),*/
           OSMFlutter(
             controller: mapController,
             osmOption: OSMOption(
@@ -338,8 +331,8 @@ class _HomePageState extends State<HomePage> {
           ),
         ),*/
               roadConfiguration: RoadOption(
-                roadColor: Colors.deepOrange.withOpacity(0).withAlpha(0),
-                roadBorderWidth: 1,
+                roadColor: Colors.deepOrange,
+                roadBorderWidth: 10,
               ),
             ),
             onLocationChanged: (GeoPoint geo) {
@@ -378,13 +371,18 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: Colors.grey,
                   radius: 20,
                   child: Icon(
-                    Icons.menu,
+                    isDrawerOpened?Icons.menu:Icons.close,
                     color: Colors.black87,
                   ),
                 ),
               ),
               onTap: () {
-                sKey.currentState!.openDrawer();
+                if(isDrawerOpened){
+                  sKey.currentState!.openDrawer();
+                }else{
+                  resetAppNow();
+                }
+
               },
             ),
           ),
