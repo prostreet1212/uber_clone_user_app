@@ -42,6 +42,7 @@ dependencies:
   yandex_geocoder: 2.1.0
   provider:
   flutter_osm_plugin: ^1.0.0-rc.1
+  loading_animation_widget:
 
 
 dev_dependencies:

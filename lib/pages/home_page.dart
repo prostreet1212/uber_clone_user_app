@@ -11,8 +11,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:uber_clone_user_app/global/global_var.dart';
+import 'package:uber_clone_user_app/global/trip_var.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
 import 'package:uber_clone_user_app/models/direction_details.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
@@ -20,8 +22,6 @@ import 'package:uber_clone_user_app/pages/search_destination_page.dart';
 import '../appinfo/app_info.dart';
 import '../authentification/login_screen.dart';
 import '../widgets/loading_dialog.dart';
-
-
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -41,6 +41,8 @@ class _HomePageState extends State<HomePage> {
   double searchContainerHeight = 276;
   double bottomMapPadding = 0;
   double rideDetailsContainerHeight = 0;
+  double requestContainerHeight = 0;
+  double tripContainerHeight = 0;
   DirectionDetails? tripDirectionDetailsInfo;
   MapController mapController = MapController.withUserPosition(
     trackUserLocation: UserTrackingOption(
@@ -48,8 +50,8 @@ class _HomePageState extends State<HomePage> {
       unFollowUser: true,
     ),
   );
-  bool isDrawerOpened=true;
-
+  bool isDrawerOpened = true;
+  String stateOfApp = 'normal';
 
   void updateMapTheme(GoogleMapController controller) {
     getJsonFileFromThemes('themes/night_style.json')
@@ -123,7 +125,7 @@ class _HomePageState extends State<HomePage> {
       searchContainerHeight = 0;
       bottomMapPadding = 240;
       rideDetailsContainerHeight = 242;
-      isDrawerOpened=false;
+      isDrawerOpened = false;
     });
   }
 
@@ -149,7 +151,7 @@ class _HomePageState extends State<HomePage> {
         await CommonMethods.getDirectionDetailsFromAPI(
             pickupGeoGraphicCoordinates,
             dropOffDestinationGeoGraphicCoordinates,
-        mapController);
+            mapController);
     setState(() {
       tripDirectionDetailsInfo = detailsFromDirectionAPI;
     });
@@ -158,7 +160,12 @@ class _HomePageState extends State<HomePage> {
             latitude: pickupGeoGraphicCoordinates.latitude,
             longitude: pickupGeoGraphicCoordinates.longitude),
         markerIcon: const MarkerIcon(
-          icon:Icon(CupertinoIcons.location_solid,size: 46,color: Colors.green,),),
+          icon: Icon(
+            CupertinoIcons.location_solid,
+            size: 46,
+            color: Colors.green,
+          ),
+        ),
         angle: pi / 3,
         iconAnchor: IconAnchor(
           anchor: Anchor.center,
@@ -168,7 +175,12 @@ class _HomePageState extends State<HomePage> {
             latitude: dropOffDestinationGeoGraphicCoordinates.latitude,
             longitude: dropOffDestinationGeoGraphicCoordinates.longitude),
         markerIcon: const MarkerIcon(
-          icon:Icon(CupertinoIcons.location_solid,size: 46,color: Colors.deepOrange,),),
+          icon: Icon(
+            CupertinoIcons.location_solid,
+            size: 46,
+            color: Colors.deepOrange,
+          ),
+        ),
         angle: pi / 3,
         iconAnchor: IconAnchor(
           anchor: Anchor.center,
@@ -176,10 +188,58 @@ class _HomePageState extends State<HomePage> {
     Navigator.pop(context);
   }
 
-  resetAppNow(){
-    setState(() {
+  resetAppNow() async {
+    var pickupLocation =
+        Provider.of<AppInfo>(context, listen: false).pickUpLocation;
+    var dropOffDestinationLocation =
+        Provider.of<AppInfo>(context, listen: false).dropOffUpLocation;
 
+    var pickupGeoGraphicCoordinates = LatLng(
+        pickupLocation!.latitudePosition!, pickupLocation!.longitudePosition!);
+    var dropOffDestinationGeoGraphicCoordinates = LatLng(
+        dropOffDestinationLocation!.latitudePosition!,
+        dropOffDestinationLocation!.longitudePosition!);
+    await mapController.clearAllRoads();
+    await mapController.removeMarkers([
+      GeoPoint(
+          latitude: pickupGeoGraphicCoordinates.latitude,
+          longitude: pickupGeoGraphicCoordinates.longitude),
+      GeoPoint(
+          latitude: dropOffDestinationGeoGraphicCoordinates.latitude,
+          longitude: dropOffDestinationGeoGraphicCoordinates.longitude),
+    ]);
+    setState(() {
+      rideDetailsContainerHeight = 0;
+      requestContainerHeight = 0;
+      tripContainerHeight = 0;
+      searchContainerHeight = 276;
+      bottomMapPadding = 300;
+      isDrawerOpened = true;
+
+      status = '';
+      nameDriver = '';
+      photoDriver = '';
+      phoneNumberDriver = '';
+      carDetailDriver = '';
+      tripStatusDisplay = 'Driver is Arriving';
     });
+  }
+
+  cancelRideRequest(){
+    //remove ride request from database
+    setState(() {
+      stateOfApp='normal';
+    });
+  }
+
+  displayRequestContainer() {
+    setState(() {
+      rideDetailsContainerHeight = 0;
+      requestContainerHeight = 220;
+      bottomMapPadding = 200;
+      isDrawerOpened = true;
+    });
+    //send ride request
   }
 
   @override
@@ -294,6 +354,7 @@ class _HomePageState extends State<HomePage> {
           OSMFlutter(
             controller: mapController,
             osmOption: OSMOption(
+              enableRotationByGesture: false,
               zoomOption: ZoomOption(
                 initZoom: 12,
                 /* minZoomLevel: 4,
@@ -343,7 +404,7 @@ class _HomePageState extends State<HomePage> {
               if (isReady) {
                 await Future.delayed(Duration(seconds: 1), () async {
                   await mapController.currentLocation();
-                  currentPositionOfUser1=await mapController.myLocation();
+                  currentPositionOfUser1 = await mapController.myLocation();
                   getCurrentLiveLocationOfUser();
                 });
               }
@@ -371,18 +432,17 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: Colors.grey,
                   radius: 20,
                   child: Icon(
-                    isDrawerOpened?Icons.menu:Icons.close,
+                    isDrawerOpened ? Icons.menu : Icons.close,
                     color: Colors.black87,
                   ),
                 ),
               ),
               onTap: () {
-                if(isDrawerOpened){
+                if (isDrawerOpened) {
                   sKey.currentState!.openDrawer();
-                }else{
+                } else {
                   resetAppNow();
                 }
-
               },
             ),
           ),
@@ -494,9 +554,11 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Padding(
-                                      padding:EdgeInsets.symmetric(horizontal: 8),
+                                      padding:
+                                          EdgeInsets.symmetric(horizontal: 8),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             (tripDirectionDetailsInfo != null)
@@ -512,7 +574,7 @@ class _HomePageState extends State<HomePage> {
                                           Text(
                                             (tripDirectionDetailsInfo != null)
                                                 ? tripDirectionDetailsInfo!
-                                                .durationTextString!
+                                                    .durationTextString!
                                                 : '',
                                             style: TextStyle(
                                               fontSize: 16,
@@ -529,10 +591,20 @@ class _HomePageState extends State<HomePage> {
                                         height: 116,
                                         width: 116,
                                       ),
-                                      onTap: () {},
+                                      onTap: () {
+                                        setState(() {
+                                          stateOfApp = 'requesting';
+                                        });
+                                        displayRequestContainer();
+                                        //get nearest available online drivers
+
+                                        //search driver
+                                      },
                                     ),
                                     Text(
-                                      '\$ 12',
+                                      (tripDirectionDetailsInfo != null)
+                                          ? '\$ ${(cMethods.calculateFareAmount(tripDirectionDetailsInfo!)).toString()}'
+                                          : '',
                                       style: TextStyle(
                                         fontSize: 18,
                                         color: Colors.white70,
@@ -549,7 +621,68 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-              ))
+              ),
+          ),
+          //request container
+          Positioned(
+            left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: requestContainerHeight,
+                //color: Colors.black54,
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 15,
+                      spreadRadius: 0.5,
+                      offset: Offset(0.7,0.7),
+                    )
+                  ]
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24,vertical: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 12,),
+                      SizedBox(width: 200,
+                      child:LoadingAnimationWidget.flickr(
+                          leftDotColor: Colors.greenAccent,
+                          rightDotColor: Colors.pinkAccent,
+                          size: 50,) ,),
+                      SizedBox(height: 20,),
+                      GestureDetector(
+                        child: Container(
+                          height: 50,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white70,
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(width: 1.5,color: Colors.grey)
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.black,
+                            size: 25,
+                          ),
+                        ),
+                        onTap: (){
+                          resetAppNow();
+                          cancelRideRequest();
+                        },
+                      )
+
+
+                    ],
+                  ),
+                ),
+              ),
+          ),
         ],
       ),
     );
