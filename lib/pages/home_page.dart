@@ -8,6 +8,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -16,7 +17,9 @@ import 'package:provider/provider.dart';
 import 'package:uber_clone_user_app/global/global_var.dart';
 import 'package:uber_clone_user_app/global/trip_var.dart';
 import 'package:uber_clone_user_app/methods/common_methods.dart';
+import 'package:uber_clone_user_app/methods/manage_driver_methods.dart';
 import 'package:uber_clone_user_app/models/direction_details.dart';
+import 'package:uber_clone_user_app/models/online_nearby_drivers.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
 
 import '../appinfo/app_info.dart';
@@ -52,22 +55,20 @@ class _HomePageState extends State<HomePage> {
   );
   bool isDrawerOpened = true;
   String stateOfApp = 'normal';
+  bool nearbyOnlineDriversKeysLoaded=false;
+  BitmapDescriptor? carIconNearbyDriver;
 
-  void updateMapTheme(GoogleMapController controller) {
-    getJsonFileFromThemes('themes/night_style.json')
-        .then((value) => setGoogleMapStyle(value, controller));
+  makeDriverNearbyIcon(){
+    if(carIconNearbyDriver==null){
+      ImageConfiguration configuration=createLocalImageConfiguration(context,
+          size: Size(0.5, 0.5));
+      BitmapDescriptor.fromAssetImage(configuration, 'assets/images/tracking.png')
+          .then((iconImage){
+        carIconNearbyDriver= iconImage;
+      });
+    }
   }
 
-  Future<String> getJsonFileFromThemes(String mapStylePath) async {
-    ByteData byteData = await rootBundle.load(mapStylePath);
-    var list = byteData.buffer
-        .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
-    return utf8.decode(list);
-  }
-
-  setGoogleMapStyle(String googleMapStyle, GoogleMapController controller) {
-    controller.setMapStyle(googleMapStyle);
-  }
 
   getCurrentLiveLocationOfUser() async {
     /*Position positionUser = await Geolocator.getCurrentPosition(
@@ -84,6 +85,7 @@ class _HomePageState extends State<HomePage> {
           currentPositionOfUser1!, context);
     }
     await getUserAndCheckBlockStatus();
+    await initializeGeoFireListener();
   }
 
   getUserAndCheckBlockStatus() async {
@@ -242,8 +244,111 @@ class _HomePageState extends State<HomePage> {
     //send ride request
   }
 
+  updateAvailableNearbyOnlineDriversOnMap()async{
+    for(OnlineNearbyDrivers eachOnlineNearbyDriver in ManageDriverMethods.nearbyOnlineDriversList){
+      GeoPoint driverCurrentPosition=GeoPoint(latitude: eachOnlineNearbyDriver.latDriver!,longitude:eachOnlineNearbyDriver.lngDriver!, );
+      mapController.addMarker(
+          driverCurrentPosition,
+          markerIcon:  MarkerIcon(
+            assetMarker:
+            AssetMarker(image: AssetImage('assets/images/tracking1.png',),),
+          ),
+          angle: pi / 3,
+          iconAnchor: IconAnchor(
+            anchor: Anchor.center,
+          )
+      );
+    }
+
+  }
+
+  initializeGeoFireListener()async {
+    await Geofire.initialize('onlineDrivers');
+      Geofire.queryAtLocation(currentPositionOfUser1!.latitude,
+          currentPositionOfUser1!.longitude,
+          22)!.listen((driverEvent) {
+        if(driverEvent!=null){
+          var onlineDriverChild=driverEvent['callBack'];
+          switch(onlineDriverChild){
+            case Geofire.onKeyEntered:
+              print('//////////////onKeyEntered');
+              OnlineNearbyDrivers onlineNearbyDrivers=OnlineNearbyDrivers();
+              onlineNearbyDrivers.uidDriver= driverEvent['key'];
+              onlineNearbyDrivers.latDriver= driverEvent['latitude'];
+              onlineNearbyDrivers.lngDriver= driverEvent['longitude'];
+              //ManageDriverMethods.updateOnlineNearbyDriversLocation(onlineNearbyDrivers);
+              //ManageDriverMethods.nearbyOnlineDriversList.add(onlineNearbyDrivers);
+              if(nearbyOnlineDriversKeysLoaded==true){
+                //update drivers on open map
+                GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
+                mapController.addMarker(
+                    driverCurrentPosition,
+                    markerIcon:  MarkerIcon(
+                      assetMarker:
+                      AssetMarker(image: AssetImage('assets/images/tracking1.png',),),
+                    ),
+                    angle: pi / 3,
+                    iconAnchor: IconAnchor(
+                      anchor: Anchor.center,
+                    )
+                );
+
+              }
+              break;
+            case Geofire.onKeyExited:
+              print('//////////////onKeyExited');
+              ManageDriverMethods.removeDriverFromList(driverEvent['key']);
+              //update drivers on open map
+              //updateAvailableNearbyOnlineDriversOnMap();
+              GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
+              mapController.removeMarker(driverCurrentPosition);
+              break;
+            case Geofire.onKeyMoved:
+              print('//////////////onKeMoved');
+              OnlineNearbyDrivers onlineNearbyDrivers=OnlineNearbyDrivers();
+              onlineNearbyDrivers.uidDriver= driverEvent['key'];
+              onlineNearbyDrivers.latDriver= driverEvent['latitude'];
+              onlineNearbyDrivers.lngDriver= driverEvent['longitude'];
+              ManageDriverMethods.updateOnlineNearbyDriversLocation(onlineNearbyDrivers);
+              //update drivers on open map
+              //updateAvailableNearbyOnlineDriversOnMap();
+              GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
+              break;
+            case Geofire.onGeoQueryReady:
+              print('//////////////onKeyGeoQueryReady');
+              nearbyOnlineDriversKeysLoaded=true;
+              //update drivers on open map
+              //updateAvailableNearbyOnlineDriversOnMap();
+              if(driverEvent['latitude']!=null){
+                GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
+                mapController.addMarker(
+                    driverCurrentPosition,
+                    markerIcon:  MarkerIcon(
+                      assetMarker:
+                      AssetMarker(image: AssetImage('assets/images/tracking1.png',),),
+                    ),
+                    angle: pi / 3,
+                    iconAnchor: IconAnchor(
+                      anchor: Anchor.center,
+                    )
+                );
+              }
+
+              break;
+          }
+        }
+      });
+
+
+    
+
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
+    makeDriverNearbyIcon();
     return Scaffold(
       key: sKey,
       drawer: Container(

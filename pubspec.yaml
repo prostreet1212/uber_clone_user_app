@@ -43,6 +43,7 @@ dependencies:
   provider:
   flutter_osm_plugin: ^1.0.0-rc.1
   loading_animation_widget:
+  flutter_geofire: ^2.0.3
 
 
 dev_dependencies:
