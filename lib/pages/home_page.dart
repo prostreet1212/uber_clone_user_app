@@ -55,20 +55,20 @@ class _HomePageState extends State<HomePage> {
   );
   bool isDrawerOpened = true;
   String stateOfApp = 'normal';
-  bool nearbyOnlineDriversKeysLoaded=false;
+  bool nearbyOnlineDriversKeysLoaded = false;
   BitmapDescriptor? carIconNearbyDriver;
 
-  makeDriverNearbyIcon(){
-    if(carIconNearbyDriver==null){
-      ImageConfiguration configuration=createLocalImageConfiguration(context,
-          size: Size(0.5, 0.5));
-      BitmapDescriptor.fromAssetImage(configuration, 'assets/images/tracking.png')
-          .then((iconImage){
-        carIconNearbyDriver= iconImage;
+  makeDriverNearbyIcon() {
+    if (carIconNearbyDriver == null) {
+      ImageConfiguration configuration =
+          createLocalImageConfiguration(context, size: Size(0.5, 0.5));
+      BitmapDescriptor.fromAssetImage(
+              configuration, 'assets/images/tracking.png')
+          .then((iconImage) {
+        carIconNearbyDriver = iconImage;
       });
     }
   }
-
 
   getCurrentLiveLocationOfUser() async {
     /*Position positionUser = await Geolocator.getCurrentPosition(
@@ -227,10 +227,10 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  cancelRideRequest(){
+  cancelRideRequest() {
     //remove ride request from database
     setState(() {
-      stateOfApp='normal';
+      stateOfApp = 'normal';
     });
   }
 
@@ -244,107 +244,109 @@ class _HomePageState extends State<HomePage> {
     //send ride request
   }
 
-  updateAvailableNearbyOnlineDriversOnMap()async{
-    for(OnlineNearbyDrivers eachOnlineNearbyDriver in ManageDriverMethods.nearbyOnlineDriversList){
-      GeoPoint driverCurrentPosition=GeoPoint(latitude: eachOnlineNearbyDriver.latDriver!,longitude:eachOnlineNearbyDriver.lngDriver!, );
-      mapController.addMarker(
-          driverCurrentPosition,
-          markerIcon:  MarkerIcon(
-            assetMarker:
-            AssetMarker(image: AssetImage('assets/images/tracking1.png',),),
-          ),
-          angle: pi / 3,
-          iconAnchor: IconAnchor(
-            anchor: Anchor.center,
-          )
-      );
-    }
+  updateAvailableNearbyOnlineDriversOnMap() async {
+    List<GeoPoint> removedMarkers=ManageDriverMethods.nearbyOnlineDriversList.map((removedGeo)
+    =>  GeoPoint(latitude: removedGeo.latDriver!, longitude: removedGeo.lngDriver!)).toList();
+    mapController.removeMarkers(removedMarkers);
+    ManageDriverMethods.nearbyOnlineDriversList.forEach((element) async{
+       await mapController.addMarker(
+                      GeoPoint(
+                          latitude: element.latDriver!,
+                          longitude: element!.lngDriver!),
+                      markerIcon: const MarkerIcon(
+                        icon: Icon(
+                          CupertinoIcons.car,
+                          size: 16,
+                          color: Colors.pink,
+                        ),
+                      ),
+                      angle: pi / 3,
+                      iconAnchor: IconAnchor(
+                        anchor: Anchor.center,
+                      ));
+    });
 
   }
 
-  initializeGeoFireListener()async {
-    await Geofire.initialize('onlineDrivers');
+  initializeGeoFireListener() async {
+      await Geofire.initialize('onlineDrivers');
       Geofire.queryAtLocation(currentPositionOfUser1!.latitude,
-          currentPositionOfUser1!.longitude,
-          22)!.listen((driverEvent) {
-        if(driverEvent!=null){
-          var onlineDriverChild=driverEvent['callBack'];
-          switch(onlineDriverChild){
-            case Geofire.onKeyEntered:
-              print('//////////////onKeyEntered');
-              OnlineNearbyDrivers onlineNearbyDrivers=OnlineNearbyDrivers();
-              onlineNearbyDrivers.uidDriver= driverEvent['key'];
-              onlineNearbyDrivers.latDriver= driverEvent['latitude'];
-              onlineNearbyDrivers.lngDriver= driverEvent['longitude'];
-              //ManageDriverMethods.updateOnlineNearbyDriversLocation(onlineNearbyDrivers);
-              //ManageDriverMethods.nearbyOnlineDriversList.add(onlineNearbyDrivers);
-              if(nearbyOnlineDriversKeysLoaded==true){
-                //update drivers on open map
-                GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
-                mapController.addMarker(
-                    driverCurrentPosition,
-                    markerIcon:  MarkerIcon(
-                      assetMarker:
-                      AssetMarker(image: AssetImage('assets/images/tracking1.png',),),
-                    ),
-                    angle: pi / 3,
-                    iconAnchor: IconAnchor(
-                      anchor: Anchor.center,
-                    )
-                );
+          currentPositionOfUser1!.longitude, 22)!
+        ..listen((driverEvent) async {
+          print('aaa');
+          if (driverEvent != null) {
+            var onlineDriverChild = driverEvent['callBack'];
+            switch (onlineDriverChild) {
+              case Geofire.onKeyEntered:
+                print('//////////////onKeyEntered');
+                OnlineNearbyDrivers onlineNearbyDrivers=OnlineNearbyDrivers();
+                onlineNearbyDrivers.uidDriver= driverEvent['key'];
+                onlineNearbyDrivers.latDriver= driverEvent['latitude'];
+                onlineNearbyDrivers.lngDriver= driverEvent['longitude'];
 
-              }
-              break;
-            case Geofire.onKeyExited:
-              print('//////////////onKeyExited');
-              ManageDriverMethods.removeDriverFromList(driverEvent['key']);
-              //update drivers on open map
-              //updateAvailableNearbyOnlineDriversOnMap();
-              GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
-              mapController.removeMarker(driverCurrentPosition);
-              break;
-            case Geofire.onKeyMoved:
-              print('//////////////onKeMoved');
-              OnlineNearbyDrivers onlineNearbyDrivers=OnlineNearbyDrivers();
-              onlineNearbyDrivers.uidDriver= driverEvent['key'];
-              onlineNearbyDrivers.latDriver= driverEvent['latitude'];
-              onlineNearbyDrivers.lngDriver= driverEvent['longitude'];
-              ManageDriverMethods.updateOnlineNearbyDriversLocation(onlineNearbyDrivers);
-              //update drivers on open map
-              //updateAvailableNearbyOnlineDriversOnMap();
-              GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
-              break;
-            case Geofire.onGeoQueryReady:
-              print('//////////////onKeyGeoQueryReady');
-              nearbyOnlineDriversKeysLoaded=true;
-              //update drivers on open map
-              //updateAvailableNearbyOnlineDriversOnMap();
-              if(driverEvent['latitude']!=null){
-                GeoPoint driverCurrentPosition=GeoPoint(latitude: driverEvent['latitude'],longitude:driverEvent['longitude'] );
-                mapController.addMarker(
-                    driverCurrentPosition,
-                    markerIcon:  MarkerIcon(
-                      assetMarker:
-                      AssetMarker(image: AssetImage('assets/images/tracking1.png',),),
-                    ),
-                    angle: pi / 3,
-                    iconAnchor: IconAnchor(
-                      anchor: Anchor.center,
-                    )
-                );
-              }
+                  await mapController.addMarker(
+                      GeoPoint(
+                          latitude: onlineNearbyDrivers.latDriver!,
+                          longitude: onlineNearbyDrivers!.lngDriver!),
+                      markerIcon: const MarkerIcon(
+                        icon: Icon(
+                          CupertinoIcons.car,
+                          size: 16,
+                          color: Colors.pink,
+                        ),
+                      ),
+                      angle: pi / 3,
+                      iconAnchor: IconAnchor(
+                        anchor: Anchor.center,
+                      )).then((value){
+                    ManageDriverMethods.nearbyOnlineDriversList.add(onlineNearbyDrivers);
+                  });
 
-              break;
+
+                break;
+              case Geofire.onKeyExited:
+                  print('//////////////onKeyExited ${driverEvent['latitude']}:${driverEvent['longitude']}');
+                  var oldDriver=ManageDriverMethods.getDriver(driverEvent["key"]);
+                  await mapController.removeMarker(GeoPoint(latitude: oldDriver.latDriver!, longitude: oldDriver.lngDriver!)).then((value){
+                    ManageDriverMethods.removeDriverFromList(driverEvent["key"]);
+                  });
+
+
+                break;
+              case Geofire.onKeyMoved:
+                print('//////////////onKeyMoved ${driverEvent['latitude']}:${driverEvent['longitude']}');
+                OnlineNearbyDrivers oldDriver=ManageDriverMethods.getDriver(driverEvent["key"]);
+                OnlineNearbyDrivers onlineNearbyDrivers = OnlineNearbyDrivers();
+                onlineNearbyDrivers.uidDriver = driverEvent["key"];
+                onlineNearbyDrivers.latDriver = driverEvent["latitude"];
+                onlineNearbyDrivers.lngDriver = driverEvent["longitude"];
+               await mapController.changeLocationMarker(oldLocation: GeoPoint(latitude: oldDriver.latDriver!, longitude: oldDriver.lngDriver!),
+                    newLocation: GeoPoint(latitude: onlineNearbyDrivers.latDriver!, longitude: onlineNearbyDrivers.lngDriver!))
+                   .then((value) {
+                 ManageDriverMethods.updateOnlineNearbyDriversLocation(onlineNearbyDrivers);
+               });
+
+                break;
+              case Geofire.onGeoQueryReady:
+                print('//////////////onKeyGeoQueryReady');
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text('драйверы загружены')));
+                nearbyOnlineDriversKeysLoaded=true;
+                break;
+            }
+            ManageDriverMethods.nearbyOnlineDriversList.forEach((element) {
+              print('////${element.uidDriver}: ${element.latDriver}-${element.lngDriver}');
+            });
           }
-        }
-      });
-
-
-    
+        });
 
   }
 
-
+  @override
+  void dispose() {
+    Geofire.stopListener();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -620,173 +622,177 @@ class _HomePageState extends State<HomePage> {
           ),
           // ride details container
           Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height: rideDetailsContainerHeight,
-                decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white12,
-                        blurRadius: 15,
-                        spreadRadius: 0.5,
-                        offset: Offset(.7, .7),
-                      )
-                    ]),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 18),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(left: 16, right: 16),
-                        child: SizedBox(
-                          height: 190,
-                          child: Card(
-                            elevation: 10,
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * .7,
-                              color: Colors.black45,
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 8, bottom: 8),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(horizontal: 8),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            (tripDirectionDetailsInfo != null)
-                                                ? tripDirectionDetailsInfo!
-                                                    .distanceTextString!
-                                                : '',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: rideDetailsContainerHeight,
+              decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white12,
+                      blurRadius: 15,
+                      spreadRadius: 0.5,
+                      offset: Offset(.7, .7),
+                    )
+                  ]),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 16, right: 16),
+                      child: SizedBox(
+                        height: 190,
+                        child: Card(
+                          elevation: 10,
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * .7,
+                            color: Colors.black45,
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 8, bottom: 8),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 8),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          (tripDirectionDetailsInfo != null)
+                                              ? tripDirectionDetailsInfo!
+                                                  .distanceTextString!
+                                              : '',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          Text(
-                                            (tripDirectionDetailsInfo != null)
-                                                ? tripDirectionDetailsInfo!
-                                                    .durationTextString!
-                                                : '',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        ),
+                                        Text(
+                                          (tripDirectionDetailsInfo != null)
+                                              ? tripDirectionDetailsInfo!
+                                                  .durationTextString!
+                                              : '',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                    GestureDetector(
-                                      child: Image.asset(
-                                        'assets/images/uberexec.png',
-                                        height: 116,
-                                        width: 116,
-                                      ),
-                                      onTap: () {
-                                        setState(() {
-                                          stateOfApp = 'requesting';
-                                        });
-                                        displayRequestContainer();
-                                        //get nearest available online drivers
+                                  ),
+                                  GestureDetector(
+                                    child: Image.asset(
+                                      'assets/images/uberexec.png',
+                                      height: 116,
+                                      width: 116,
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        stateOfApp = 'requesting';
+                                      });
+                                      displayRequestContainer();
+                                      //get nearest available online drivers
 
-                                        //search driver
-                                      },
+                                      //search driver
+                                    },
+                                  ),
+                                  Text(
+                                    (tripDirectionDetailsInfo != null)
+                                        ? '\$ ${(cMethods.calculateFareAmount(tripDirectionDetailsInfo!)).toString()}'
+                                        : '',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    Text(
-                                      (tripDirectionDetailsInfo != null)
-                                          ? '\$ ${(cMethods.calculateFareAmount(tripDirectionDetailsInfo!)).toString()}'
-                                          : '',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.white70,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
           ),
           //request container
           Positioned(
             left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height: requestContainerHeight,
-                //color: Colors.black54,
-                decoration: BoxDecoration(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: requestContainerHeight,
+              //color: Colors.black54,
+              decoration: BoxDecoration(
                   color: Colors.black54,
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16)),
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black26,
                       blurRadius: 15,
                       spreadRadius: 0.5,
-                      offset: Offset(0.7,0.7),
+                      offset: Offset(0.7, 0.7),
                     )
-                  ]
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24,vertical: 18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 12,),
-                      SizedBox(width: 200,
-                      child:LoadingAnimationWidget.flickr(
-                          leftDotColor: Colors.greenAccent,
-                          rightDotColor: Colors.pinkAccent,
-                          size: 50,) ,),
-                      SizedBox(height: 20,),
-                      GestureDetector(
-                        child: Container(
-                          height: 50,
-                          width: 50,
-                          decoration: BoxDecoration(
+                  ]),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 12,
+                    ),
+                    SizedBox(
+                      width: 200,
+                      child: LoadingAnimationWidget.flickr(
+                        leftDotColor: Colors.greenAccent,
+                        rightDotColor: Colors.pinkAccent,
+                        size: 50,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    GestureDetector(
+                      child: Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
                             color: Colors.white70,
                             borderRadius: BorderRadius.circular(25),
-                            border: Border.all(width: 1.5,color: Colors.grey)
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.black,
-                            size: 25,
-                          ),
+                            border: Border.all(width: 1.5, color: Colors.grey)),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.black,
+                          size: 25,
                         ),
-                        onTap: (){
-                          resetAppNow();
-                          cancelRideRequest();
-                        },
-                      )
-
-
-                    ],
-                  ),
+                      ),
+                      onTap: () {
+                        resetAppNow();
+                        cancelRideRequest();
+                      },
+                    )
+                  ],
                 ),
               ),
+            ),
           ),
         ],
       ),

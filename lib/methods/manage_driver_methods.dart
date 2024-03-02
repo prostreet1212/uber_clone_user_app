@@ -15,6 +15,11 @@ class ManageDriverMethods{
     => driver.uidDriver==nearbyOnlineDriverInformation.uidDriver);
     nearbyOnlineDriversList[index].latDriver=nearbyOnlineDriverInformation.latDriver;
     nearbyOnlineDriversList[index].lngDriver=nearbyOnlineDriverInformation.lngDriver;
+  }
+
+  static OnlineNearbyDrivers getDriver(String key){
+    OnlineNearbyDrivers currentDriver=nearbyOnlineDriversList.where((element) => element.uidDriver==key).first;
+    return currentDriver;
 
   }
 }
