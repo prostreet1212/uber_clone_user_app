@@ -61,26 +61,11 @@ return 'error';
     String humanReadableAddress = geocodeFromPoint.firstAddress!.formatted!;
     AddressModel model = AddressModel();
     model.humanReadableAddress = humanReadableAddress;
+    model.placeName=humanReadableAddress;
     model.latitudePosition = position.latitude;
     model.longitudePosition = position.longitude;
     Provider.of<AppInfo>(context,listen: false).updatePickUpLocation(model);
     return humanReadableAddress;
-    
-    /*final YandexGeocoder geocoder =
-        YandexGeocoder(apiKey: 'd9b87948-441f-4d14-997c-0480020df2bc');
-    final GeocodeResponse geocodeFromPoint =
-        await geocoder.getGeocode(GeocodeRequest(
-      geocode: PointGeocode(
-          latitude: position.latitude, longitude: position.longitude),
-      lang: Lang.enEn,
-    ));
-    String humanReadableAddress = geocodeFromPoint.firstAddress!.formatted!;
-    AddressModel model = AddressModel();
-    model.humanReadableAddress = humanReadableAddress;
-    model.latitudePosition = position.latitude;
-    model.longitudePosition = position.longitude;
-    Provider.of<AppInfo>(context,listen: false).updatePickUpLocation(model);
-    return humanReadableAddress;*/
 
   }
 

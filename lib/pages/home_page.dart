@@ -21,6 +21,7 @@ import 'package:uber_clone_user_app/methods/manage_driver_methods.dart';
 import 'package:uber_clone_user_app/models/direction_details.dart';
 import 'package:uber_clone_user_app/models/online_nearby_drivers.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
+import 'package:uber_clone_user_app/widgets/info_dialog.dart';
 
 import '../appinfo/app_info.dart';
 import '../authentification/login_screen.dart';
@@ -57,6 +58,8 @@ class _HomePageState extends State<HomePage> {
   String stateOfApp = 'normal';
   bool nearbyOnlineDriversKeysLoaded = false;
   BitmapDescriptor? carIconNearbyDriver;
+  DatabaseReference? tripRequestRef;
+  List<OnlineNearbyDrivers>? availableNearbyOnlineDriversList;
 
   makeDriverNearbyIcon() {
     if (carIconNearbyDriver == null) {
@@ -98,6 +101,7 @@ class _HomePageState extends State<HomePage> {
         if ((snap.snapshot.value as Map)['blockStatus'] == 'no') {
           setState(() {
             userName = (snap.snapshot.value as Map)['name'];
+            userPhone = (snap.snapshot.value as Map)['phone'];
           });
         } else {
           FirebaseAuth.instance.signOut();
@@ -161,7 +165,8 @@ class _HomePageState extends State<HomePage> {
         GeoPoint(
             latitude: pickupGeoGraphicCoordinates.latitude,
             longitude: pickupGeoGraphicCoordinates.longitude),
-        markerIcon: const MarkerIcon(
+        markerIcon:
+        const MarkerIcon(
           icon: Icon(
             CupertinoIcons.location_solid,
             size: 46,
@@ -229,6 +234,7 @@ class _HomePageState extends State<HomePage> {
 
   cancelRideRequest() {
     //remove ride request from database
+    tripRequestRef!.remove();
     setState(() {
       stateOfApp = 'normal';
     });
@@ -242,9 +248,57 @@ class _HomePageState extends State<HomePage> {
       isDrawerOpened = true;
     });
     //send ride request
+    makeTripRequest();
   }
 
-  updateAvailableNearbyOnlineDriversOnMap() async {
+  makeTripRequest(){
+    tripRequestRef=FirebaseDatabase.instance.ref().child('tripRequests')
+        .push();
+    var pickUpLocation=Provider.of<AppInfo>(context,listen: false).pickUpLocation;
+    var dropOffDestinationLocation=Provider.of<AppInfo>(context,listen: false).dropOffUpLocation;
+
+    Map pickUpCoordinatesMap={
+      'latitude':pickUpLocation!.latitudePosition.toString(),
+      'longitude':pickUpLocation!.longitudePosition.toString(),
+    };
+    Map dropOffDestinationCoordinatesMap={
+      'latitude':dropOffDestinationLocation!.latitudePosition.toString(),
+      'longitude':dropOffDestinationLocation.longitudePosition.toString(),
+    };
+
+    Map driverCoordinates={
+      'latitude':'',
+      'longitude':'',
+    };
+
+    Map dataMap={
+      'tripID':tripRequestRef!.key,
+      'psublishDateTime':DateTime.now().toString(),
+
+      'userName':userName,
+      'userPhone':userPhone,
+      'userID':userID,
+      'pickUpLatLng':pickUpCoordinatesMap,
+      'dropOffLatLng':dropOffDestinationCoordinatesMap,
+      'pickUpAddress':pickUpLocation.placeName,
+      'dropOffAddress':dropOffDestinationLocation.placeName,
+
+      'driverID':'waiting',
+      'carDetails':'',
+      'driverLocation':driverCoordinates,
+      'driverName':'',
+      'driverPhone':'',
+      'driverPhoto':'',
+      'fareAmount':'',
+      'status':'new'
+    };
+
+    tripRequestRef!.set(dataMap);
+
+  }
+
+
+  /*updateAvailableNearbyOnlineDriversOnMap() async {
     List<GeoPoint> removedMarkers=ManageDriverMethods.nearbyOnlineDriversList.map((removedGeo)
     =>  GeoPoint(latitude: removedGeo.latDriver!, longitude: removedGeo.lngDriver!)).toList();
     mapController.removeMarkers(removedMarkers);
@@ -266,7 +320,7 @@ class _HomePageState extends State<HomePage> {
                       ));
     });
 
-  }
+  }*/
 
   initializeGeoFireListener() async {
       await Geofire.initialize('onlineDrivers');
@@ -288,13 +342,16 @@ class _HomePageState extends State<HomePage> {
                       GeoPoint(
                           latitude: onlineNearbyDrivers.latDriver!,
                           longitude: onlineNearbyDrivers!.lngDriver!),
-                      markerIcon: const MarkerIcon(
+                      markerIcon: MarkerIcon(
+                        assetMarker: AssetMarker(image:AssetImage('assets/images/tracking1.png') ),
+                      ),
+                      /*const MarkerIcon(
                         icon: Icon(
                           CupertinoIcons.car,
                           size: 16,
                           color: Colors.pink,
                         ),
-                      ),
+                      ),*/
                       angle: pi / 3,
                       iconAnchor: IconAnchor(
                         anchor: Anchor.center,
@@ -339,7 +396,26 @@ class _HomePageState extends State<HomePage> {
             });
           }
         });
+  }
 
+  noDriverAvailable(){
+showDialog(context: context,
+    barrierDismissible: false,
+    builder: (context)=>InfoDialog(title: 'No Driver Available',
+      description:'No driver found in the nearby location. Please try again shortly.' ,));
+
+  }
+
+  searchDriver(){
+    if(availableNearbyOnlineDriversList!.length==0){
+      cancelRideRequest();
+      resetAppNow();
+      noDriverAvailable();
+      return;
+    }
+    var currentDriver= availableNearbyOnlineDriversList![0];
+    //send notification to this currentDriver
+    availableNearbyOnlineDriversList!.removeAt(0);
   }
 
   @override
@@ -704,8 +780,10 @@ class _HomePageState extends State<HomePage> {
                                       });
                                       displayRequestContainer();
                                       //get nearest available online drivers
+                                      availableNearbyOnlineDriversList=ManageDriverMethods.nearbyOnlineDriversList;
 
                                       //search driver
+                                      searchDriver();
                                     },
                                   ),
                                   Text(
