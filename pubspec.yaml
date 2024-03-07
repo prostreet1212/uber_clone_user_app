@@ -45,7 +45,8 @@ dependencies:
   #flutter_osm_plugin:
   loading_animation_widget:
   flutter_geofire: ^2.0.0
-  #geo_firestore_flutter: ^0.1.6
+  restart_app:
+
 
 
 dev_dependencies:
