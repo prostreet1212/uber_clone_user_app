@@ -447,6 +447,37 @@ showDialog(context: context,
       }else{
         return;
       }
+      const oneTickPerSec=Duration(seconds: 1);
+      var timerCountDown=Timer.periodic(oneTickPerSec, (timer) {
+        requestTimeoutDriver=requestTimeoutDriver-1;
+        //when trip request is not requesting means trip request cancelled-stop timer
+        if(stateOfApp!='requesting'){
+          timer.cancel();
+          currentDriverRef.set('canceled');
+          currentDriverRef.onDisconnect();
+          requestTimeoutDriver=20;
+        }
+        //when trip request is accepted by online nearest available driver
+        currentDriverRef.onValue.listen((dataSnapshot) {
+          if(dataSnapshot.snapshot.value.toString()=='accepted'){
+            timer.cancel();
+            currentDriverRef.onDisconnect();
+            requestTimeoutDriver=20;
+          }
+        });
+        
+        //if 20 sec passed-send notification to next nearest driver
+        if(requestTimeoutDriver==0){
+          currentDriverRef.set('timeout');
+          timer.cancel();
+          currentDriverRef.onDisconnect();
+          requestTimeoutDriver=20;
+          //sentd notidication next driver
+          searchDriver();
+        }
+        
+        
+      });
     });
   }
 
