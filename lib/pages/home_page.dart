@@ -232,7 +232,7 @@ class _HomePageState extends State<HomePage> {
       carDetailDriver = '';
       tripStatusDisplay = 'Driver is Arriving';
     });
-    Restart.restartApp();
+    //Restart.restartApp();
   }
 
   cancelRideRequest() {
@@ -416,11 +416,12 @@ showDialog(context: context,
       noDriverAvailable();
       return;
     }
-    var currentDriver= availableNearbyOnlineDriversList![0];
+
+    var currentDriver= availableNearbyOnlineDriversList![availableNearbyOnlineDriversList!.length-1];
     //возможно здесь удалить маркер
     //send notification to this currentDriver
     sendNotificationToDriver(currentDriver);
-    availableNearbyOnlineDriversList!.removeAt(0);
+    availableNearbyOnlineDriversList!.removeAt(availableNearbyOnlineDriversList!.length-1);
   }
   sendNotificationToDriver(OnlineNearbyDrivers currentDriver){
     //update driver's newTripStatus-assign tripID to current driver
@@ -472,7 +473,7 @@ showDialog(context: context,
           timer.cancel();
           currentDriverRef.onDisconnect();
           requestTimeoutDriver=20;
-          //sentd notidication next driver
+          //send notidication next driver
           searchDriver();
         }
         

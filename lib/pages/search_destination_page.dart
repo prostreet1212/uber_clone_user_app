@@ -40,20 +40,6 @@ class _SearchDestinationPageState extends State<SearchDestinationPage> {
           dropOffPredicationsPlacesList=predictionsList;
         });
       }
-
-
-      //yandex
-   /*   String apiPlaceUrl='https://search-maps.yandex.ru/v1/?text=$locationName&type=geo&lang=en_US&apikey=857ba51b-df09-45eb-b94d-2b3be63a58bf';
-      var responseFromPlacesAPI=await CommonMethods.sendRequestToAPI(apiPlaceUrl);
-      var predictionResultInJson=responseFromPlacesAPI['features'];
-      var predictionsList=(predictionResultInJson as List).map((e) {
-        return PredictionModel(place_id: '1',main_text: e['properties']['name'],secondary_text: e['properties']['description'],
-            latitude:((e['geometry']['coordinates']) as List)[0],longitude: ((e['geometry']['coordinates']) as List)[1] );
-      }).toList();
-      setState(() {
-        dropOffPredicationsPlacesList=predictionsList;
-      });*/
-
     }
   }
 
