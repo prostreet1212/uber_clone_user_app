@@ -78,7 +78,7 @@ static Future<DirectionDetails> getDirectionDetailsFromAPI(LatLng source,LatLng 
     roadType: RoadType.car,
   );
     print('Расстояние: ${roadInfo.distance}, длительность ${roadInfo.duration}');
-    return DirectionDetails(distanceTextString: '${roadInfo.distance!.toStringAsFixed(2)} км',durationTextString: '${(roadInfo.duration!/60).toStringAsFixed(2)} мин.',distanceValueDigits: 15,durationValueDigits: 5,encodedPoints: 'points');
+    return DirectionDetails(distanceTextString: '${roadInfo.distance!.toStringAsFixed(2)} км',durationTextString: '${(roadInfo.duration!/60).toStringAsFixed(2)} мин.',distanceValueDigits: roadInfo.distance,durationValueDigits: roadInfo.duration,encodedPoints: 'points');
 }
 
   calculateFareAmount(DirectionDetails directionDetails)
@@ -87,12 +87,12 @@ static Future<DirectionDetails> getDirectionDetailsFromAPI(LatLng source,LatLng 
     double durationPerMinuteAmount = 0.3;
     double baseFareAmount = 2;
 
-    double totalDistanceTravelFareAmount = (directionDetails.distanceValueDigits! / 1000) * distancePerKmAmount;
+    double totalDistanceTravelFareAmount = (directionDetails.distanceValueDigits! / 100) * distancePerKmAmount;
     double totalDurationSpendFareAmount = (directionDetails.durationValueDigits! / 60) * durationPerMinuteAmount;
 
     double overAllTotalFareAmount = baseFareAmount + totalDistanceTravelFareAmount + totalDurationSpendFareAmount;
 
-    return overAllTotalFareAmount.toStringAsFixed(1);
+    return overAllTotalFareAmount.toStringAsFixed(2);
   }
 
 }
