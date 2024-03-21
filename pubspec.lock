@@ -266,18 +266,18 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_osm_plugin
-      sha256: af11c49a742ece65fbecac5aadcf185e4a9141e6c58d2e5ae267d01f45c74df9
+      sha256: dfc1be88f8a227287a4468a32f49a416c19c6a0a7260f3c3bf2834fd0a14cf79
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0-rc.1"
+    version: "1.0.0-rc.6"
   flutter_osm_web:
     dependency: transitive
     description:
       name: flutter_osm_web
-      sha256: "587011654b3fde39e89f61c5b05a2b753a3cabd39df82c9a062d9d909cc77908"
+      sha256: f5f589e03d12354268db89fdf3fe2f0be68512d5423a1966b49cb3c829c0c29b
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0-rc.1"
+    version: "1.0.0-rc.4"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -425,7 +425,7 @@ packages:
     source: hosted
     version: "4.0.2"
   js:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: js
       sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
@@ -620,10 +620,10 @@ packages:
     dependency: transitive
     description:
       name: routing_client_dart
-      sha256: b7d48ba131d9a73933855d64df911364564a367b5be222ab30eba4fc1632ebcc
+      sha256: "4e2acf1145bb8056e04fd93101a9f2bab2fd769c9d972f7f403f9733a670cb33"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.4"
+    version: "0.5.5"
   sanitize_html:
     dependency: transitive
     description:
@@ -761,10 +761,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_web
-      sha256: fff0932192afeedf63cdd50ecbb1bc825d31aed259f02bb8dba0f3b729a5e88b
+      sha256: "3692a459204a33e04bc94f5fb91158faf4f2c8903281ddd82915adecdb1a901d"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.3"
+    version: "2.3.0"
   url_launcher_windows:
     dependency: transitive
     description:
@@ -801,10 +801,10 @@ packages:
     dependency: transitive
     description:
       name: web
-      sha256: afe077240a270dcfd2aafe77602b4113645af95d0ad31128cc02bce5ac5d5152
+      sha256: "97da13628db363c635202ad97068d47c5b8aa555808e7a9411963c533b449b27"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.0"
+    version: "0.5.1"
   xml:
     dependency: transitive
     description:
@@ -822,5 +822,5 @@ packages:
     source: hosted
     version: "2.1.0"
 sdks:
-  dart: ">=3.2.0 <4.0.0"
-  flutter: ">=3.16.0"
+  dart: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"

@@ -644,14 +644,20 @@ showDialog(context: context,
                 roadBorderWidth: 10,
               ),
             ),
-            onLocationChanged: (GeoPoint geo) {
+            onLocationChanged: (GeoPoint geo)async {
               //currentPositionOfUser1 = geo;
+              await mapController.currentLocation();
               print('ИЗменить${geo.toString()}');
             },
             onMapIsReady: (isReady) async {
               if (isReady) {
                 await Future.delayed(Duration(seconds: 1), () async {
                   await mapController.currentLocation();
+                  await mapController.enableTracking(
+                    enableStopFollow: false,
+                    disableUserMarkerRotation: true,
+                    // anchor: Anchor.left,  here anchor is testing you can put anchor that match with your need
+                  );
                   currentPositionOfUser1 = await mapController.myLocation();
                   getCurrentLiveLocationOfUser();
                 });
