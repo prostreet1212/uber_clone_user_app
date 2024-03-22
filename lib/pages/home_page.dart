@@ -24,6 +24,7 @@ import 'package:uber_clone_user_app/models/direction_details.dart';
 import 'package:uber_clone_user_app/models/online_nearby_drivers.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
 import 'package:uber_clone_user_app/widgets/info_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../appinfo/app_info.dart';
 import '../authentification/login_screen.dart';
@@ -40,7 +41,7 @@ class _HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> googleMapCompleterController =
       Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
-  Position? currentPositionOfUser;
+  //Position? currentPositionOfUser;
   GeoPoint? currentPositionOfUser1;
   GlobalKey<ScaffoldState> sKey = GlobalKey<ScaffoldState>();
   CommonMethods cMethods = CommonMethods();
@@ -62,6 +63,8 @@ class _HomePageState extends State<HomePage> {
   BitmapDescriptor? carIconNearbyDriver;
   DatabaseReference? tripRequestRef;
   List<OnlineNearbyDrivers>? availableNearbyOnlineDriversList;
+  StreamSubscription<DatabaseEvent>? tripStreamSubscription;
+  bool requestingDirectionDetailsInfo = false;
 
   makeDriverNearbyIcon() {
     if (carIconNearbyDriver == null) {
@@ -141,7 +144,7 @@ class _HomePageState extends State<HomePage> {
     var pickupLocation =
         Provider.of<AppInfo>(context, listen: false).pickUpLocation;
     var dropOffDestinationLocation =
-        Provider.of<AppInfo>(context, listen: false).dropOffUpLocation;
+        Provider.of<AppInfo>(context, listen: false).dropOffLocation;
 
     var pickupGeoGraphicCoordinates = LatLng(
         pickupLocation!.latitudePosition!, pickupLocation!.longitudePosition!);
@@ -167,8 +170,7 @@ class _HomePageState extends State<HomePage> {
         GeoPoint(
             latitude: pickupGeoGraphicCoordinates.latitude,
             longitude: pickupGeoGraphicCoordinates.longitude),
-        markerIcon:
-        const MarkerIcon(
+        markerIcon: const MarkerIcon(
           icon: Icon(
             CupertinoIcons.location_solid,
             size: 46,
@@ -194,6 +196,11 @@ class _HomePageState extends State<HomePage> {
         iconAnchor: IconAnchor(
           anchor: Anchor.center,
         ));
+    RoadInfo roadInfo = await mapController.drawRoad(
+      GeoPoint(latitude: pickupGeoGraphicCoordinates.latitude, longitude: pickupGeoGraphicCoordinates.longitude),
+      GeoPoint(latitude: dropOffDestinationGeoGraphicCoordinates.latitude, longitude: dropOffDestinationGeoGraphicCoordinates.longitude),
+      roadType: RoadType.car,
+    );
     Navigator.pop(context);
   }
 
@@ -201,7 +208,7 @@ class _HomePageState extends State<HomePage> {
     var pickupLocation =
         Provider.of<AppInfo>(context, listen: false).pickUpLocation;
     var dropOffDestinationLocation =
-        Provider.of<AppInfo>(context, listen: false).dropOffUpLocation;
+        Provider.of<AppInfo>(context, listen: false).dropOffLocation;
 
     var pickupGeoGraphicCoordinates = LatLng(
         pickupLocation!.latitudePosition!, pickupLocation!.longitudePosition!);
@@ -229,7 +236,7 @@ class _HomePageState extends State<HomePage> {
       nameDriver = '';
       photoDriver = '';
       phoneNumberDriver = '';
-      carDetailDriver = '';
+      carDetailsDriver = '';
       tripStatusDisplay = 'Driver is Arriving';
     });
     //Restart.restartApp();
@@ -254,52 +261,164 @@ class _HomePageState extends State<HomePage> {
     makeTripRequest();
   }
 
-  makeTripRequest(){
-    tripRequestRef=FirebaseDatabase.instance.ref().child('tripRequests')
-        .push();
-    var pickUpLocation=Provider.of<AppInfo>(context,listen: false).pickUpLocation;
-    var dropOffDestinationLocation=Provider.of<AppInfo>(context,listen: false).dropOffUpLocation;
+  makeTripRequest() {
+    tripRequestRef =
+        FirebaseDatabase.instance.ref().child('tripRequests').push();
+    var pickUpLocation =
+        Provider.of<AppInfo>(context, listen: false).pickUpLocation;
+    var dropOffDestinationLocation =
+        Provider.of<AppInfo>(context, listen: false).dropOffLocation;
 
-    Map pickUpCoordinatesMap={
-      'latitude':pickUpLocation!.latitudePosition.toString(),
-      'longitude':pickUpLocation!.longitudePosition.toString(),
+    Map pickUpCoordinatesMap = {
+      'latitude': pickUpLocation!.latitudePosition.toString(),
+      'longitude': pickUpLocation!.longitudePosition.toString(),
     };
-    Map dropOffDestinationCoordinatesMap={
-      'latitude':dropOffDestinationLocation!.latitudePosition.toString(),
-      'longitude':dropOffDestinationLocation.longitudePosition.toString(),
-    };
-
-    Map driverCoordinates={
-      'latitude':'',
-      'longitude':'',
+    Map dropOffDestinationCoordinatesMap = {
+      'latitude': dropOffDestinationLocation!.latitudePosition.toString(),
+      'longitude': dropOffDestinationLocation.longitudePosition.toString(),
     };
 
-    Map dataMap={
-      'tripID':tripRequestRef!.key,
-      'psublishDateTime':DateTime.now().toString(),
+    Map driverCoordinates = {
+      'latitude': '1',
+      'longitude': '2',
+    };
 
-      'userName':userName,
-      'userPhone':userPhone,
-      'userID':userID,
-      'pickUpLatLng':pickUpCoordinatesMap,
-      'dropOffLatLng':dropOffDestinationCoordinatesMap,
-      'pickUpAddress':pickUpLocation.placeName,
-      'dropOffAddress':dropOffDestinationLocation.placeName,
-
-      'driverID':'waiting',
-      'carDetails':'',
-      'driverLocation':driverCoordinates,
-      'driverName':'',
-      'driverPhone':'',
-      'driverPhoto':'',
-      'fareAmount':'',
-      'status':'new'
+    Map dataMap = {
+      'tripID': tripRequestRef!.key,
+      'psublishDateTime': DateTime.now().toString(),
+      'userName': userName,
+      'userPhone': userPhone,
+      'userID': userID,
+      'pickUpLatLng': pickUpCoordinatesMap,
+      'dropOffLatLng': dropOffDestinationCoordinatesMap,
+      'pickUpAddress': pickUpLocation.placeName,
+      'dropOffAddress': dropOffDestinationLocation.placeName,
+      'driverID': 'waiting',
+      'carDetails': '',
+      'driverLocation': driverCoordinates,
+      'driverName': '',
+      'driverPhone': '',
+      'driverPhoto': '',
+      'fareAmount': '',
+      'status': 'new'
     };
 
     tripRequestRef!.set(dataMap);
 
+    tripStreamSubscription = tripRequestRef!.onValue.listen((eventSnapshot) {
+      if (eventSnapshot.snapshot.value == null) {
+        return;
+      }
+      if ((eventSnapshot.snapshot.value as Map)['driverName'] != null) {
+        nameDriver = (eventSnapshot.snapshot.value as Map)['driverName'];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["driverPhone"] != null) {
+        phoneNumberDriver =
+            (eventSnapshot.snapshot.value as Map)["driverPhone"];
+      }
+
+      if ((eventSnapshot.snapshot.value as Map)["driverPhoto"] != null) {
+        photoDriver = (eventSnapshot.snapshot.value as Map)["driverPhoto"];
+      }
+
+      if ((eventSnapshot.snapshot.value as Map)["carDetails"] != null) {
+        carDetailsDriver = (eventSnapshot.snapshot.value as Map)["carDetails"];
+      }
+
+      if ((eventSnapshot.snapshot.value as Map)["status"] != null) {
+        status = (eventSnapshot.snapshot.value as Map)["status"];
+      }
+
+      if ((eventSnapshot.snapshot.value as Map)["driverLocation"] != null) {
+        double driverLatitude = double.parse(
+            (eventSnapshot.snapshot.value as Map)["driverLocation"]["latitude"]
+                .toString());
+        double driverLongitude = double.parse(
+            (eventSnapshot.snapshot.value as Map)["driverLocation"]["longitude"]
+                .toString());
+        LatLng driverCurrentLocationLatLng =
+            LatLng(driverLatitude, driverLongitude);
+        if (status == "accepted") {
+          //update info for pickup to user on UI
+          //info from driver current location to user pickup location
+          updateFromDriverCurrentLocationToPickUp(driverCurrentLocationLatLng);
+        } else if (status == "arrived") {
+          //update info for arrived - when driver reach at the pickup point of user
+          setState(() {
+            tripStatusDisplay = 'Driver has Arrived';
+          });
+        } else if (status == "ontrip") {
+          //update info for dropoff to user on UI
+          //info from driver current location to user dropoff location
+          updateFromDriverCurrentLocationToDropOffDestination(
+              driverCurrentLocationLatLng);
+        }
+      }
+
+      if(status=='accepted'){
+        displayTripRequestContainer();
+        Geofire.stopListener();
+        setState(() {
+          //удалить маркеры других водил
+          ManageDriverMethods.nearbyOnlineDriversList.forEach((geo) {
+            mapController.removeMarker(GeoPoint(latitude: geo.latDriver!, longitude: geo.lngDriver!));
+          });
+          ManageDriverMethods.nearbyOnlineDriversList=[];//???
+
+        });
+      }
+
+    });
   }
 
+  displayTripRequestContainer(){
+    requestContainerHeight=0;
+    tripContainerHeight=291;
+    bottomMapPadding=281;
+  }
+
+  updateFromDriverCurrentLocationToPickUp(driverCurrentLocationLatLng) async{
+    if (!requestingDirectionDetailsInfo) {
+      requestingDirectionDetailsInfo=true;
+    }
+    var userPickUpLocationLatLng = LatLng(currentPositionOfUser1!.latitude, currentPositionOfUser1!.longitude);
+
+    var directionDetailsPickup = await CommonMethods.getDirectionDetailsFromAPI(driverCurrentLocationLatLng, userPickUpLocationLatLng,mapController);
+
+    if(directionDetailsPickup == null)
+    {
+      return;
+    }
+
+    setState(() {
+      tripStatusDisplay = "Driver is Coming - ${directionDetailsPickup.durationTextString}";
+    });
+
+    requestingDirectionDetailsInfo = false;
+  }
+
+  updateFromDriverCurrentLocationToDropOffDestination(driverCurrentLocationLatLng) async
+  {
+    if(!requestingDirectionDetailsInfo)
+    {
+      requestingDirectionDetailsInfo = true;
+
+      var dropOffLocation = Provider.of<AppInfo>(context, listen: false).dropOffLocation;
+      var userDropOffLocationLatLng = LatLng(dropOffLocation!.latitudePosition!, dropOffLocation.longitudePosition!);
+
+      var directionDetailsPickup = await CommonMethods.getDirectionDetailsFromAPI(driverCurrentLocationLatLng, userDropOffLocationLatLng,mapController);
+
+      if(directionDetailsPickup == null)
+      {
+        return;
+      }
+
+      setState(() {
+        tripStatusDisplay = "Driving to DropOff Location - ${directionDetailsPickup.durationTextString}";
+      });
+      requestingDirectionDetailsInfo = false;
+    }
+  }
 
   /*updateAvailableNearbyOnlineDriversOnMap() async {
     List<GeoPoint> removedMarkers=ManageDriverMethods.nearbyOnlineDriversList.map((removedGeo)
@@ -326,27 +445,29 @@ class _HomePageState extends State<HomePage> {
   }*/
 
   initializeGeoFireListener() async {
-      await Geofire.initialize('onlineDrivers');
-      Geofire.queryAtLocation(currentPositionOfUser1!.latitude,
-          currentPositionOfUser1!.longitude, 22)!
-        ..listen((driverEvent) async {
-          print('aaa');
-          if (driverEvent != null) {
-            var onlineDriverChild = driverEvent['callBack'];
-            switch (onlineDriverChild) {
-              case Geofire.onKeyEntered:
-                print('//////////////onKeyEntered');
-                OnlineNearbyDrivers onlineNearbyDrivers=OnlineNearbyDrivers();
-                onlineNearbyDrivers.uidDriver= driverEvent['key'];
-                onlineNearbyDrivers.latDriver= driverEvent['latitude'];
-                onlineNearbyDrivers.lngDriver= driverEvent['longitude'];
+    await Geofire.initialize('onlineDrivers');
+    Geofire.queryAtLocation(currentPositionOfUser1!.latitude,
+        currentPositionOfUser1!.longitude, 22)!
+      ..listen((driverEvent) async {
+        print('aaa');
+        if (driverEvent != null) {
+          var onlineDriverChild = driverEvent['callBack'];
+          switch (onlineDriverChild) {
+            case Geofire.onKeyEntered:
+              print('//////////////onKeyEntered');
+              OnlineNearbyDrivers onlineNearbyDrivers = OnlineNearbyDrivers();
+              onlineNearbyDrivers.uidDriver = driverEvent['key'];
+              onlineNearbyDrivers.latDriver = driverEvent['latitude'];
+              onlineNearbyDrivers.lngDriver = driverEvent['longitude'];
 
-                  await mapController.addMarker(
+              await mapController
+                  .addMarker(
                       GeoPoint(
                           latitude: onlineNearbyDrivers.latDriver!,
                           longitude: onlineNearbyDrivers!.lngDriver!),
                       markerIcon: MarkerIcon(
-                        assetMarker: AssetMarker(image:AssetImage('assets/images/tracking1.png') ),
+                        assetMarker: AssetMarker(
+                            image: AssetImage('assets/images/tracking1.png')),
                       ),
                       /*const MarkerIcon(
                         icon: Icon(
@@ -358,130 +479,146 @@ class _HomePageState extends State<HomePage> {
                       angle: pi / 3,
                       iconAnchor: IconAnchor(
                         anchor: Anchor.center,
-                      )).then((value){
-                    ManageDriverMethods.nearbyOnlineDriversList.add(onlineNearbyDrivers);
-                  });
+                      ))
+                  .then((value) {
+                ManageDriverMethods.nearbyOnlineDriversList
+                    .add(onlineNearbyDrivers);
+              });
 
+              break;
+            case Geofire.onKeyExited:
+              print(
+                  '//////////////onKeyExited ${driverEvent['latitude']}:${driverEvent['longitude']}');
+              var oldDriver = ManageDriverMethods.getDriver(driverEvent["key"]);
+              await mapController
+                  .removeMarker(GeoPoint(
+                      latitude: oldDriver.latDriver!,
+                      longitude: oldDriver.lngDriver!))
+                  .then((value) {
+                ManageDriverMethods.removeDriverFromList(driverEvent["key"]);
+              });
 
-                break;
-              case Geofire.onKeyExited:
-                  print('//////////////onKeyExited ${driverEvent['latitude']}:${driverEvent['longitude']}');
-                  var oldDriver=ManageDriverMethods.getDriver(driverEvent["key"]);
-                  await mapController.removeMarker(GeoPoint(latitude: oldDriver.latDriver!, longitude: oldDriver.lngDriver!)).then((value){
-                    ManageDriverMethods.removeDriverFromList(driverEvent["key"]);
-                  });
+              break;
+            case Geofire.onKeyMoved:
+              print(
+                  '//////////////onKeyMoved ${driverEvent['latitude']}:${driverEvent['longitude']}');
+              OnlineNearbyDrivers oldDriver =
+                  ManageDriverMethods.getDriver(driverEvent["key"]);
+              OnlineNearbyDrivers onlineNearbyDrivers = OnlineNearbyDrivers();
+              onlineNearbyDrivers.uidDriver = driverEvent["key"];
+              onlineNearbyDrivers.latDriver = driverEvent["latitude"];
+              onlineNearbyDrivers.lngDriver = driverEvent["longitude"];
+              await mapController
+                  .changeLocationMarker(
+                      oldLocation: GeoPoint(
+                          latitude: oldDriver.latDriver!,
+                          longitude: oldDriver.lngDriver!),
+                      newLocation: GeoPoint(
+                          latitude: onlineNearbyDrivers.latDriver!,
+                          longitude: onlineNearbyDrivers.lngDriver!))
+                  .then((value) {
+                ManageDriverMethods.updateOnlineNearbyDriversLocation(
+                    onlineNearbyDrivers);
+              });
 
-
-                break;
-              case Geofire.onKeyMoved:
-                print('//////////////onKeyMoved ${driverEvent['latitude']}:${driverEvent['longitude']}');
-                OnlineNearbyDrivers oldDriver=ManageDriverMethods.getDriver(driverEvent["key"]);
-                OnlineNearbyDrivers onlineNearbyDrivers = OnlineNearbyDrivers();
-                onlineNearbyDrivers.uidDriver = driverEvent["key"];
-                onlineNearbyDrivers.latDriver = driverEvent["latitude"];
-                onlineNearbyDrivers.lngDriver = driverEvent["longitude"];
-               await mapController.changeLocationMarker(oldLocation: GeoPoint(latitude: oldDriver.latDriver!, longitude: oldDriver.lngDriver!),
-                    newLocation: GeoPoint(latitude: onlineNearbyDrivers.latDriver!, longitude: onlineNearbyDrivers.lngDriver!))
-                   .then((value) {
-                 ManageDriverMethods.updateOnlineNearbyDriversLocation(onlineNearbyDrivers);
-               });
-
-                break;
-              case Geofire.onGeoQueryReady:
-                print('//////////////onKeyGeoQueryReady');
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text('драйверы загружены')));
-                nearbyOnlineDriversKeysLoaded=true;
-                break;
-            }
-            ManageDriverMethods.nearbyOnlineDriversList.forEach((element) {
-              print('////${element.uidDriver}: ${element.latDriver}-${element.lngDriver}');
-            });
+              break;
+            case Geofire.onGeoQueryReady:
+              print('//////////////onKeyGeoQueryReady');
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text('драйверы загружены')));
+              nearbyOnlineDriversKeysLoaded = true;
+              break;
           }
-        });
+          ManageDriverMethods.nearbyOnlineDriversList.forEach((element) {
+            print(
+                '////${element.uidDriver}: ${element.latDriver}-${element.lngDriver}');
+          });
+        }
+      });
   }
 
-  noDriverAvailable(){
-showDialog(context: context,
-    barrierDismissible: false,
-    builder: (context)=>InfoDialog(title: 'No Driver Available',
-      description:'No driver found in the nearby location. Please try again shortly.' ,));
-
+  noDriverAvailable() {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => InfoDialog(
+              title: 'No Driver Available',
+              description:
+                  'No driver found in the nearby location. Please try again shortly.',
+            ));
   }
 
-  searchDriver(){
-    if(availableNearbyOnlineDriversList!.length==0){
+  searchDriver() {
+    if (availableNearbyOnlineDriversList!.length == 0) {
       cancelRideRequest();
       resetAppNow();
       noDriverAvailable();
       return;
     }
 
-    var currentDriver= availableNearbyOnlineDriversList![availableNearbyOnlineDriversList!.length-1];
+    var currentDriver = availableNearbyOnlineDriversList![
+        availableNearbyOnlineDriversList!.length - 1];
     //возможно здесь удалить маркер
     //send notification to this currentDriver
     sendNotificationToDriver(currentDriver);
-    availableNearbyOnlineDriversList!.removeAt(availableNearbyOnlineDriversList!.length-1);
+    availableNearbyOnlineDriversList!
+        .removeAt(availableNearbyOnlineDriversList!.length - 1);
   }
-  sendNotificationToDriver(OnlineNearbyDrivers currentDriver){
+
+  sendNotificationToDriver(OnlineNearbyDrivers currentDriver) {
     //update driver's newTripStatus-assign tripID to current driver
-    DatabaseReference currentDriverRef=FirebaseDatabase.instance
+    DatabaseReference currentDriverRef = FirebaseDatabase.instance
         .ref()
         .child('drivers')
         .child(currentDriver.uidDriver.toString())
         .child('newTripStatus');
     currentDriverRef.set(tripRequestRef!.key);
     //get current driver device recognition token
-    DatabaseReference tokenOfCurrentDriverRef=FirebaseDatabase.instance
+    DatabaseReference tokenOfCurrentDriverRef = FirebaseDatabase.instance
         .ref()
         .child('drivers')
         .child(currentDriver.uidDriver.toString())
         .child('deviceToken');
-    tokenOfCurrentDriverRef.once().then((dataSnapshot){
-      if(dataSnapshot.snapshot.value!=null){
-        String deviceToken=dataSnapshot.snapshot.value.toString();
+    tokenOfCurrentDriverRef.once().then((dataSnapshot) {
+      if (dataSnapshot.snapshot.value != null) {
+        String deviceToken = dataSnapshot.snapshot.value.toString();
         //send notification
         PushNotificationService.sendNotificationToSelectedDriver(
-            deviceToken,
-            context,
-            tripRequestRef!.key.toString());
-      }else{
+            deviceToken, context, tripRequestRef!.key.toString());
+      } else {
         return;
       }
-      const oneTickPerSec=Duration(seconds: 1);
-      var timerCountDown=Timer.periodic(oneTickPerSec, (timer) {
-        requestTimeoutDriver=requestTimeoutDriver-1;
+      const oneTickPerSec = Duration(seconds: 1);
+      var timerCountDown = Timer.periodic(oneTickPerSec, (timer) {
+        requestTimeoutDriver = requestTimeoutDriver - 1;
         //when trip request is not requesting means trip request cancelled-stop timer
-        if(stateOfApp!='requesting'){
+        if (stateOfApp != 'requesting') {
           timer.cancel();
           currentDriverRef.set('canceled');
           currentDriverRef.onDisconnect();
-          requestTimeoutDriver=20;
+          requestTimeoutDriver = 20;
         }
         //when trip request is accepted by online nearest available driver
         currentDriverRef.onValue.listen((dataSnapshot) {
-          if(dataSnapshot.snapshot.value.toString()=='accepted'){
+          if (dataSnapshot.snapshot.value.toString() == 'accepted') {
             timer.cancel();
             currentDriverRef.onDisconnect();
-            requestTimeoutDriver=20;
+            requestTimeoutDriver = 20;
           }
         });
-        
+
         //if 20 sec passed-send notification to next nearest driver
-        if(requestTimeoutDriver==0){
+        if (requestTimeoutDriver == 0) {
           currentDriverRef.set('timeout');
           timer.cancel();
           currentDriverRef.onDisconnect();
-          requestTimeoutDriver=20;
+          requestTimeoutDriver = 20;
           //send notidication next driver
           searchDriver();
         }
-        
-        
       });
     });
   }
-
 
   @override
   void dispose() {
@@ -644,7 +781,7 @@ showDialog(context: context,
                 roadBorderWidth: 10,
               ),
             ),
-            onLocationChanged: (GeoPoint geo)async {
+            onLocationChanged: (GeoPoint geo) async {
               //currentPositionOfUser1 = geo;
               await mapController.currentLocation();
               print('ИЗменить${geo.toString()}');
@@ -729,7 +866,7 @@ showDialog(context: context,
                       if (responseFromSearchPage == 'placeSelected') {
                         String dropOffLocation =
                             Provider.of<AppInfo>(context, listen: false)
-                                    .dropOffUpLocation!
+                                    .dropOffLocation!
                                     .placeName ??
                                 '';
                         print('dropOffLocation =' + dropOffLocation);
@@ -851,7 +988,9 @@ showDialog(context: context,
                                       });
                                       displayRequestContainer();
                                       //get nearest available online drivers
-                                      availableNearbyOnlineDriversList=ManageDriverMethods.nearbyOnlineDriversList;
+                                      availableNearbyOnlineDriversList =
+                                          ManageDriverMethods
+                                              .nearbyOnlineDriversList;
 
                                       //search driver
                                       searchDriver();
@@ -942,6 +1081,113 @@ showDialog(context: context,
                 ),
               ),
             ),
+          ),
+          //trip details container
+          Positioned(
+            left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height:tripContainerHeight ,
+                decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white24,
+                        blurRadius: 15,
+                        spreadRadius: 0.5,
+                        offset: Offset(0.7, 0.7),
+                      )
+                    ]),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24,vertical: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 5,),
+                      //trip status display text
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                        Text(tripStatusDisplay,style: TextStyle(fontSize: 19,color: Colors.grey),)
+                      ],),
+                      SizedBox(height: 19,),
+                      Divider(height: 1,color: Colors.white70,thickness: 1,),
+                      SizedBox(height: 19,),
+                      //image - driver name and car details
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ClipOval(
+                            child: Image.network(
+                              photoDriver==''
+                                  ?'https://firebasestorage.googleapis.com/v0/b/flutter-uber-clone-with-ef45b.appspot.com/o/avatarman.png?alt=media&token=b33fd3a4-f6dd-43a2-b0a7-1201b3bd50af':
+                              photoDriver,
+                              width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,),
+                          ),
+                          SizedBox(width: 8,),
+
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(nameDriver,
+                              style:TextStyle(
+                                fontSize: 20,color: Colors.grey
+                              ),),
+                              Text(carDetailsDriver,
+                                style:TextStyle(
+                                    fontSize: 14,color: Colors.grey
+                                ),),
+
+                            ],
+                          )
+                        ],
+                      ),
+                      SizedBox(height: 19,),
+                      Divider(height: 1,color: Colors.white70,thickness: 1,),
+                      SizedBox(height: 19,),
+                      //call driver btn
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(Radius.circular(25)),
+                                    border: Border.all(
+                                      width: 1,
+                                      color: Colors.white,
+                                    )
+                                  ),
+                                  child: Icon(Icons.phone,color: Colors.white,),
+                                ),
+                                SizedBox(height: 11,),
+                                Text('Call',style: TextStyle(color: Colors.grey),)
+                              ],
+                            ),
+                            onTap: (){
+                              launchUrl(Uri.parse('tel://$phoneNumberDriver'));
+                            },
+                          )
+                        ],
+                      ),
+
+                    ],
+                  ),
+                ),
+              ),
           ),
         ],
       ),

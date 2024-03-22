@@ -3,7 +3,7 @@ import 'package:uber_clone_user_app/models/address_model.dart';
 
 class AppInfo extends ChangeNotifier{
   AddressModel? pickUpLocation;
-  AddressModel? dropOffUpLocation;
+  AddressModel? dropOffLocation;
 
   void updatePickUpLocation(AddressModel pickUpModel){
     pickUpLocation=pickUpModel;
@@ -11,7 +11,7 @@ class AppInfo extends ChangeNotifier{
   }
 
   void updateDropOffLocation(AddressModel dropOffModel){
-    dropOffUpLocation=dropOffModel;
+    dropOffLocation=dropOffModel;
     notifyListeners();
   }
 

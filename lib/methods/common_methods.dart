@@ -70,15 +70,38 @@ return 'error';
   }
 
   //directions API1
-static Future<DirectionDetails> getDirectionDetailsFromAPI(LatLng source,LatLng destination,MapController controller)async{
+static Future<DirectionDetails?> getDirectionDetailsFromAPI(LatLng source,LatLng destination,MapController controller)async{
 
-    RoadInfo roadInfo = await controller.drawRoad(
+  /*  RoadInfo roadInfo = await controller.drawRoad(
     GeoPoint(latitude: source.latitude, longitude: source.longitude),
     GeoPoint(latitude: destination.latitude, longitude: destination.longitude),
     roadType: RoadType.car,
-  );
-    print('Расстояние: ${roadInfo.distance}, длительность ${roadInfo.duration}');
-    return DirectionDetails(distanceTextString: '${roadInfo.distance!.toStringAsFixed(2)} км',durationTextString: '${(roadInfo.duration!/60).toStringAsFixed(2)} мин.',distanceValueDigits: roadInfo.distance,durationValueDigits: roadInfo.duration,encodedPoints: 'points');
+  );*/
+  String urlDirectionsAPI =
+      "https://routing.openstreetmap.de/routed-car/route/v1/driving/${destination.longitude},${destination.latitude};${source.longitude},${source.latitude}?alternatives=false&overview=full&steps=true";
+  //String urlDirectionsAPI = "https://routing.openstreetmap.de/routed-car/route/v1/driving/46.6487000000,61.2356967000;46.6491476000,61.2354754000?alternatives=false&overview=full&steps=true";
+  print(urlDirectionsAPI);
+  Map<String, dynamic> responseFromDirectionsAPI =
+  await sendRequestToAPI(urlDirectionsAPI);
+
+  if (responseFromDirectionsAPI == "error") {
+    return null;
+  }
+  DirectionDetails detailsModel = DirectionDetails();
+  num du=responseFromDirectionsAPI['routes'][0]['duration'];
+  double duration=du.toDouble();
+  duration=duration/60;
+  detailsModel.durationTextString =
+  '${duration.toStringAsFixed(1)} мин.';
+  num d=(responseFromDirectionsAPI['routes'][0]['distance']);
+  double distance=d.toDouble();
+  distance=distance/1000;
+  detailsModel.distanceTextString= '${distance.toStringAsFixed(2)} км';
+  detailsModel.distanceValueDigits=distance;
+  detailsModel.durationValueDigits=duration;
+  return detailsModel;
+    //print('Расстояние: ${roadInfo.distance}, длительность ${roadInfo.duration}');
+    //return DirectionDetails(distanceTextString: '${roadInfo.distance!.toStringAsFixed(2)} км',durationTextString: '${(roadInfo.duration!/60).toStringAsFixed(2)} мин.',distanceValueDigits: roadInfo.distance,durationValueDigits: roadInfo.duration,encodedPoints: 'points');
 }
 
   calculateFareAmount(DirectionDetails directionDetails)

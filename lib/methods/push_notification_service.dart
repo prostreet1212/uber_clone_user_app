@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 class PushNotificationService{
 
   static sendNotificationToSelectedDriver(String deviceToken,BuildContext context,String tripID)async {
-    String dropOffDestinationAddress=Provider.of<AppInfo>(context,listen: false).dropOffUpLocation!.placeName.toString();
+    String dropOffDestinationAddress=Provider.of<AppInfo>(context,listen: false).dropOffLocation!.placeName.toString();
     String pickUpAddress=Provider.of<AppInfo>(context,listen: false).pickUpLocation!.placeName.toString();
 
     Map<String, String> headerNotificationMap = {
