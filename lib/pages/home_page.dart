@@ -8,6 +8,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:geolocator/geolocator.dart';
@@ -22,8 +23,10 @@ import 'package:uber_clone_user_app/methods/manage_driver_methods.dart';
 import 'package:uber_clone_user_app/methods/push_notification_service.dart';
 import 'package:uber_clone_user_app/models/direction_details.dart';
 import 'package:uber_clone_user_app/models/online_nearby_drivers.dart';
+import 'package:uber_clone_user_app/pages/about_page.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
 import 'package:uber_clone_user_app/widgets/info_dialog.dart';
+import 'package:uber_clone_user_app/widgets/payment_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../appinfo/app_info.dart';
@@ -41,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> googleMapCompleterController =
       Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
+
   //Position? currentPositionOfUser;
   GeoPoint? currentPositionOfUser1;
   GlobalKey<ScaffoldState> sKey = GlobalKey<ScaffoldState>();
@@ -197,8 +201,12 @@ class _HomePageState extends State<HomePage> {
           anchor: Anchor.center,
         ));
     RoadInfo roadInfo = await mapController.drawRoad(
-      GeoPoint(latitude: pickupGeoGraphicCoordinates.latitude, longitude: pickupGeoGraphicCoordinates.longitude),
-      GeoPoint(latitude: dropOffDestinationGeoGraphicCoordinates.latitude, longitude: dropOffDestinationGeoGraphicCoordinates.longitude),
+      GeoPoint(
+          latitude: pickupGeoGraphicCoordinates.latitude,
+          longitude: pickupGeoGraphicCoordinates.longitude),
+      GeoPoint(
+          latitude: dropOffDestinationGeoGraphicCoordinates.latitude,
+          longitude: dropOffDestinationGeoGraphicCoordinates.longitude),
       roadType: RoadType.car,
     );
     Navigator.pop(context);
@@ -305,7 +313,7 @@ class _HomePageState extends State<HomePage> {
 
     tripRequestRef!.set(dataMap);
 
-    tripStreamSubscription = tripRequestRef!.onValue.listen((eventSnapshot) {
+    tripStreamSubscription = tripRequestRef!.onValue.listen((eventSnapshot)async {
       if (eventSnapshot.snapshot.value == null) {
         return;
       }
@@ -355,66 +363,90 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-      if(status=='accepted'){
+      if (status == 'accepted') {
         displayTripRequestContainer();
         Geofire.stopListener();
         setState(() {
           //удалить маркеры других водил
-          ManageDriverMethods.nearbyOnlineDriversList.forEach((geo) {
-            mapController.removeMarker(GeoPoint(latitude: geo.latDriver!, longitude: geo.lngDriver!));
+          ManageDriverMethods.nearbyOnlineDriversList.forEach((geo) async {
+            await mapController.removeMarker(
+                GeoPoint(latitude: geo.latDriver!, longitude: geo.lngDriver!));
           });
-          ManageDriverMethods.nearbyOnlineDriversList=[];//???
-
+          ManageDriverMethods.nearbyOnlineDriversList = []; //???
         });
       }
-
+      if (status == 'ended') {
+        if ((eventSnapshot.snapshot.value as Map)["fareAmount"] != null) {
+          double fareAmount = double.parse(
+              (eventSnapshot.snapshot.value as Map)["fareAmount"].toString());
+         var responseFromPaymentDialog= await showDialog(
+              context: context,
+              builder: (context)=>PaymentDialog(fareAmount: fareAmount.toString()),
+         );
+         if(responseFromPaymentDialog=='paid'){
+           tripRequestRef!.onDisconnect();
+           tripRequestRef=null;
+           tripStreamSubscription!.cancel();
+           tripStreamSubscription!=null;
+           resetAppNow();
+           Restart.restartApp();
+         }
+        }
+      }
     });
   }
 
-  displayTripRequestContainer(){
-    requestContainerHeight=0;
-    tripContainerHeight=291;
-    bottomMapPadding=281;
+  displayTripRequestContainer() {
+    requestContainerHeight = 0;
+    tripContainerHeight = 291;
+    bottomMapPadding = 281;
   }
 
-  updateFromDriverCurrentLocationToPickUp(driverCurrentLocationLatLng) async{
+  updateFromDriverCurrentLocationToPickUp(driverCurrentLocationLatLng) async {
     if (!requestingDirectionDetailsInfo) {
-      requestingDirectionDetailsInfo=true;
+      requestingDirectionDetailsInfo = true;
     }
-    var userPickUpLocationLatLng = LatLng(currentPositionOfUser1!.latitude, currentPositionOfUser1!.longitude);
+    var userPickUpLocationLatLng = LatLng(
+        currentPositionOfUser1!.latitude, currentPositionOfUser1!.longitude);
 
-    var directionDetailsPickup = await CommonMethods.getDirectionDetailsFromAPI(driverCurrentLocationLatLng, userPickUpLocationLatLng,mapController);
+    var directionDetailsPickup = await CommonMethods.getDirectionDetailsFromAPI(
+        driverCurrentLocationLatLng, userPickUpLocationLatLng, mapController);
 
-    if(directionDetailsPickup == null)
-    {
+    if (directionDetailsPickup == null) {
       return;
     }
 
     setState(() {
-      tripStatusDisplay = "Driver is Coming - ${directionDetailsPickup.durationTextString}";
+      tripStatusDisplay =
+          "Driver is Coming - ${directionDetailsPickup.durationTextString}";
     });
 
     requestingDirectionDetailsInfo = false;
   }
 
-  updateFromDriverCurrentLocationToDropOffDestination(driverCurrentLocationLatLng) async
-  {
-    if(!requestingDirectionDetailsInfo)
-    {
+  updateFromDriverCurrentLocationToDropOffDestination(
+      driverCurrentLocationLatLng) async {
+    if (!requestingDirectionDetailsInfo) {
       requestingDirectionDetailsInfo = true;
 
-      var dropOffLocation = Provider.of<AppInfo>(context, listen: false).dropOffLocation;
-      var userDropOffLocationLatLng = LatLng(dropOffLocation!.latitudePosition!, dropOffLocation.longitudePosition!);
+      var dropOffLocation =
+          Provider.of<AppInfo>(context, listen: false).dropOffLocation;
+      var userDropOffLocationLatLng = LatLng(dropOffLocation!.latitudePosition!,
+          dropOffLocation.longitudePosition!);
 
-      var directionDetailsPickup = await CommonMethods.getDirectionDetailsFromAPI(driverCurrentLocationLatLng, userDropOffLocationLatLng,mapController);
+      var directionDetailsPickup =
+          await CommonMethods.getDirectionDetailsFromAPI(
+              driverCurrentLocationLatLng,
+              userDropOffLocationLatLng,
+              mapController);
 
-      if(directionDetailsPickup == null)
-      {
+      if (directionDetailsPickup == null) {
         return;
       }
 
       setState(() {
-        tripStatusDisplay = "Driving to DropOff Location - ${directionDetailsPickup.durationTextString}";
+        tripStatusDisplay =
+            "Driving to DropOff Location - ${directionDetailsPickup.durationTextString}";
       });
       requestingDirectionDetailsInfo = false;
     }
@@ -695,17 +727,22 @@ class _HomePageState extends State<HomePage> {
                 height: 10,
               ),
               //body
-              ListTile(
-                leading: IconButton(
-                  icon: Icon(
-                    Icons.info,
-                    color: Colors.grey,
+              GestureDetector(
+                onTap: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>AboutPage()));
+                },
+                child: ListTile(
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.info,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {},
                   ),
-                  onPressed: () {},
-                ),
-                title: Text(
-                  'About',
-                  style: TextStyle(color: Colors.grey),
+                  title: Text(
+                    'About',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ),
               GestureDetector(
@@ -1085,109 +1122,141 @@ class _HomePageState extends State<HomePage> {
           //trip details container
           Positioned(
             left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height:tripContainerHeight ,
-                decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white24,
-                        blurRadius: 15,
-                        spreadRadius: 0.5,
-                        offset: Offset(0.7, 0.7),
-                      )
-                    ]),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24,vertical: 18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 5,),
-                      //trip status display text
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                        Text(tripStatusDisplay,style: TextStyle(fontSize: 19,color: Colors.grey),)
-                      ],),
-                      SizedBox(height: 19,),
-                      Divider(height: 1,color: Colors.white70,thickness: 1,),
-                      SizedBox(height: 19,),
-                      //image - driver name and car details
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ClipOval(
-                            child: Image.network(
-                              photoDriver==''
-                                  ?'https://firebasestorage.googleapis.com/v0/b/flutter-uber-clone-with-ef45b.appspot.com/o/avatarman.png?alt=media&token=b33fd3a4-f6dd-43a2-b0a7-1201b3bd50af':
-                              photoDriver,
-                              width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,),
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: tripContainerHeight,
+              decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white24,
+                      blurRadius: 15,
+                      spreadRadius: 0.5,
+                      offset: Offset(0.7, 0.7),
+                    )
+                  ]),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 5,
+                    ),
+                    //trip status display text
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          tripStatusDisplay,
+                          style: TextStyle(fontSize: 19, color: Colors.grey),
+                        )
+                      ],
+                    ),
+                    SizedBox(
+                      height: 19,
+                    ),
+                    Divider(
+                      height: 1,
+                      color: Colors.white70,
+                      thickness: 1,
+                    ),
+                    SizedBox(
+                      height: 19,
+                    ),
+                    //image - driver name and car details
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        ClipOval(
+                          child: Image.network(
+                            photoDriver == ''
+                                ? 'https://firebasestorage.googleapis.com/v0/b/flutter-uber-clone-with-ef45b.appspot.com/o/avatarman.png?alt=media&token=b33fd3a4-f6dd-43a2-b0a7-1201b3bd50af'
+                                : photoDriver,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
                           ),
-                          SizedBox(width: 8,),
-
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        SizedBox(
+                          width: 8,
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              nameDriver,
+                              style:
+                                  TextStyle(fontSize: 20, color: Colors.grey),
+                            ),
+                            Text(
+                              carDetailsDriver,
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                    SizedBox(
+                      height: 19,
+                    ),
+                    Divider(
+                      height: 1,
+                      color: Colors.white70,
+                      thickness: 1,
+                    ),
+                    SizedBox(
+                      height: 19,
+                    ),
+                    //call driver btn
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(nameDriver,
-                              style:TextStyle(
-                                fontSize: 20,color: Colors.grey
-                              ),),
-                              Text(carDetailsDriver,
-                                style:TextStyle(
-                                    fontSize: 14,color: Colors.grey
-                                ),),
-
-                            ],
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 19,),
-                      Divider(height: 1,color: Colors.white70,thickness: 1,),
-                      SizedBox(height: 19,),
-                      //call driver btn
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Container(
-                                  height: 50,
-                                  width: 50,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.all(Radius.circular(25)),
+                              Container(
+                                height: 50,
+                                width: 50,
+                                decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(25)),
                                     border: Border.all(
                                       width: 1,
                                       color: Colors.white,
-                                    )
-                                  ),
-                                  child: Icon(Icons.phone,color: Colors.white,),
+                                    )),
+                                child: Icon(
+                                  Icons.phone,
+                                  color: Colors.white,
                                 ),
-                                SizedBox(height: 11,),
-                                Text('Call',style: TextStyle(color: Colors.grey),)
-                              ],
-                            ),
-                            onTap: (){
-                              launchUrl(Uri.parse('tel://$phoneNumberDriver'));
-                            },
-                          )
-                        ],
-                      ),
-
-                    ],
-                  ),
+                              ),
+                              SizedBox(
+                                height: 11,
+                              ),
+                              Text(
+                                'Call',
+                                style: TextStyle(color: Colors.grey),
+                              )
+                            ],
+                          ),
+                          onTap: () {
+                            launchUrl(Uri.parse('tel://$phoneNumberDriver'));
+                          },
+                        )
+                      ],
+                    ),
+                  ],
                 ),
               ),
+            ),
           ),
         ],
       ),
