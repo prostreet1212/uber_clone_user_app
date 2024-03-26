@@ -25,6 +25,7 @@ import 'package:uber_clone_user_app/models/direction_details.dart';
 import 'package:uber_clone_user_app/models/online_nearby_drivers.dart';
 import 'package:uber_clone_user_app/pages/about_page.dart';
 import 'package:uber_clone_user_app/pages/search_destination_page.dart';
+import 'package:uber_clone_user_app/pages/trips_history_page.dart';
 import 'package:uber_clone_user_app/widgets/info_dialog.dart';
 import 'package:uber_clone_user_app/widgets/payment_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -727,6 +728,24 @@ class _HomePageState extends State<HomePage> {
                 height: 10,
               ),
               //body
+              GestureDetector(
+                onTap: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>TripsHistoryPage()));
+                },
+                child: ListTile(
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.history,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {},
+                  ),
+                  title: Text(
+                    'History',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
               GestureDetector(
                 onTap: (){
                   Navigator.push(context, MaterialPageRoute(builder: (context)=>AboutPage()));
