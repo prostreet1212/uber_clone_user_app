@@ -166,8 +166,7 @@ class _HomePageState extends State<HomePage> {
     var detailsFromDirectionAPI =
         await CommonMethods.getDirectionDetailsFromAPI(
             pickupGeoGraphicCoordinates,
-            dropOffDestinationGeoGraphicCoordinates,
-            mapController);
+            dropOffDestinationGeoGraphicCoordinates);
     setState(() {
       tripDirectionDetailsInfo = detailsFromDirectionAPI;
     });
@@ -288,8 +287,8 @@ class _HomePageState extends State<HomePage> {
     };
 
     Map driverCoordinates = {
-      'latitude': '1',
-      'longitude': '2',
+      'latitude': '',
+      'longitude': '',
     };
 
     Map dataMap = {
@@ -338,7 +337,7 @@ class _HomePageState extends State<HomePage> {
         status = (eventSnapshot.snapshot.value as Map)["status"];
       }
 
-      if ((eventSnapshot.snapshot.value as Map)["driverLocation"] != null) {
+      if ((eventSnapshot.snapshot.value as Map)["driverLocation"] != null&&(eventSnapshot.snapshot.value as Map)["driverLocation"]['latitude'] != '') {
         double driverLatitude = double.parse(
             (eventSnapshot.snapshot.value as Map)["driverLocation"]["latitude"]
                 .toString());
@@ -369,7 +368,7 @@ class _HomePageState extends State<HomePage> {
         Geofire.stopListener();
         setState(() {
           //удалить маркеры других водил
-          ManageDriverMethods.nearbyOnlineDriversList.forEach((geo) async {
+         ManageDriverMethods.nearbyOnlineDriversList.forEach((geo) async {
             await mapController.removeMarker(
                 GeoPoint(latitude: geo.latDriver!, longitude: geo.lngDriver!));
           });
@@ -411,7 +410,7 @@ class _HomePageState extends State<HomePage> {
         currentPositionOfUser1!.latitude, currentPositionOfUser1!.longitude);
 
     var directionDetailsPickup = await CommonMethods.getDirectionDetailsFromAPI(
-        driverCurrentLocationLatLng, userPickUpLocationLatLng, mapController);
+        driverCurrentLocationLatLng, userPickUpLocationLatLng);
 
     if (directionDetailsPickup == null) {
       return;
@@ -438,8 +437,7 @@ class _HomePageState extends State<HomePage> {
       var directionDetailsPickup =
           await CommonMethods.getDirectionDetailsFromAPI(
               driverCurrentLocationLatLng,
-              userDropOffLocationLatLng,
-              mapController);
+              userDropOffLocationLatLng);
 
       if (directionDetailsPickup == null) {
         return;
@@ -581,21 +579,25 @@ class _HomePageState extends State<HomePage> {
             ));
   }
 
-  searchDriver() {
+  searchDriver() async {
     if (availableNearbyOnlineDriversList!.length == 0) {
+
       cancelRideRequest();
       resetAppNow();
       noDriverAvailable();
       return;
     }
 
-    var currentDriver = availableNearbyOnlineDriversList![
-        availableNearbyOnlineDriversList!.length - 1];
+
+    var currentDriver = availableNearbyOnlineDriversList![0];
     //возможно здесь удалить маркер
     //send notification to this currentDriver
-    sendNotificationToDriver(currentDriver);
-    availableNearbyOnlineDriversList!
-        .removeAt(availableNearbyOnlineDriversList!.length - 1);
+    await sendNotificationToDriver(currentDriver);
+    availableNearbyOnlineDriversList!.removeAt(0);
+
+
+    print('колво ${ManageDriverMethods.nearbyOnlineDriversList.length}');
+
   }
 
   sendNotificationToDriver(OnlineNearbyDrivers currentDriver) {
@@ -858,6 +860,14 @@ class _HomePageState extends State<HomePage> {
             },
             mapIsLoading: Center(child: CircularProgressIndicator()),
           ),
+          Positioned(
+            top: 100,
+            child: ElevatedButton(onPressed: (){
+              print('КОЛИЧЕСТВО: ${ManageDriverMethods
+                  .nearbyOnlineDriversList.length}');
+            },
+                child: Text('aaa')),
+          ),
 
           //drawer button
           Positioned(
@@ -1044,9 +1054,9 @@ class _HomePageState extends State<HomePage> {
                                       });
                                       displayRequestContainer();
                                       //get nearest available online drivers
-                                      availableNearbyOnlineDriversList =
-                                          ManageDriverMethods
-                                              .nearbyOnlineDriversList;
+                                      availableNearbyOnlineDriversList =List.from(ManageDriverMethods
+                                          .nearbyOnlineDriversList);
+                                          ;
 
                                       //search driver
                                       searchDriver();

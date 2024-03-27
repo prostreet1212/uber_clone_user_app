@@ -70,7 +70,7 @@ return 'error';
   }
 
   //directions API1
-static Future<DirectionDetails?> getDirectionDetailsFromAPI(LatLng source,LatLng destination,MapController controller)async{
+static Future<DirectionDetails?> getDirectionDetailsFromAPI(LatLng source,LatLng destination )async{
 
   /*  RoadInfo roadInfo = await controller.drawRoad(
     GeoPoint(latitude: source.latitude, longitude: source.longitude),
