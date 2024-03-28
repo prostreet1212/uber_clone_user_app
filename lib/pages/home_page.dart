@@ -841,7 +841,7 @@ class _HomePageState extends State<HomePage> {
             ),
             onLocationChanged: (GeoPoint geo) async {
               //currentPositionOfUser1 = geo;
-              await mapController.currentLocation();
+              //await mapController.currentLocation();
               print('ИЗменить${geo.toString()}');
             },
             onMapIsReady: (isReady) async {
@@ -853,22 +853,16 @@ class _HomePageState extends State<HomePage> {
                     disableUserMarkerRotation: true,
                     // anchor: Anchor.left,  here anchor is testing you can put anchor that match with your need
                   );
-                  currentPositionOfUser1 = await mapController.myLocation();
+                  Position p=await Geolocator.getCurrentPosition(
+                      desiredAccuracy: LocationAccuracy.bestForNavigation);
+                  currentPositionOfUser1=GeoPoint(latitude: p.latitude, longitude: p.longitude);
+                  //currentPositionOfUser1 = await mapController.myLocation();
                   getCurrentLiveLocationOfUser();
                 });
               }
             },
             mapIsLoading: Center(child: CircularProgressIndicator()),
           ),
-          Positioned(
-            top: 100,
-            child: ElevatedButton(onPressed: (){
-              print('КОЛИЧЕСТВО: ${ManageDriverMethods
-                  .nearbyOnlineDriversList.length}');
-            },
-                child: Text('aaa')),
-          ),
-
           //drawer button
           Positioned(
             top: 36,

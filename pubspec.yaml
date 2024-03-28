@@ -41,7 +41,7 @@ dependencies:
   geolocator:
   yandex_geocoder: 2.1.0
   provider:
-  flutter_osm_plugin: ^1.0.0-rc.6
+  flutter_osm_plugin: ^1.0.0-rc.5
   #flutter_osm_plugin:
   loading_animation_widget:
   flutter_geofire: ^2.0.0
